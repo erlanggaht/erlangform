@@ -71,9 +71,17 @@ export function FieldRenderer({
 
   return (
     <div
-      style={{
-        gridColumn: layout?.colSpan ? `span ${layout.colSpan}` : "span 12",
-      }}
+      className="erlform-field"
+      style={
+        {
+          "--erlform-col-span": layout?.colSpan ?? 12,
+          "--erlform-sm": layout?.sm ?? layout?.colSpan ?? 12,
+          "--erlform-md": layout?.md ?? layout?.sm ?? layout?.colSpan ?? 12,
+          "--erlform-lg": layout?.lg ?? layout?.md ?? layout?.sm ?? layout?.colSpan ?? 12,
+          "--erlform-xl":
+            layout?.xl ?? layout?.lg ?? layout?.md ?? layout?.sm ?? layout?.colSpan ?? 12,
+        } as React.CSSProperties
+      }
     >
       {content}
     </div>

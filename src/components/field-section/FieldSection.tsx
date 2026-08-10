@@ -12,20 +12,20 @@ export function FieldSection({ name, config, children }: FieldSectionProps) {
 
   if (!config?.collapsible) {
     return (
-      <section className={config?.className}>
+      <section className={`erlform-section ${config?.className ?? ""}`}>
         <header className={config?.headerClassName}>
           <h3 style={{ fontWeight: 600 }}>{title}</h3>
 
           {config?.description && <p>{config.description}</p>}
         </header>
 
-        <div className={config?.contentClassName}>{children}</div>
+        <div className={`erlform-grid ${config?.contentClassName ?? ""}`}>{children}</div>
       </section>
     );
   }
 
   return (
-    <details className={config?.className} open={config?.defaultOpen}>
+    <details className={`erlform-section ${config?.className ?? ""}`} open={config?.defaultOpen}>
       <summary
         className={config?.headerClassName}
         style={{
@@ -52,7 +52,7 @@ export function FieldSection({ name, config, children }: FieldSectionProps) {
         </span>
       </summary>
 
-      <div className={config?.contentClassName}>{children}</div>
+      <div className={`erlform-grid ${config?.contentClassName ?? ""}`}>{children}</div>
     </details>
   );
 }

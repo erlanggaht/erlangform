@@ -26,31 +26,25 @@ export function AutoForm({
   const groups = groupFieldsBySection(fields, fieldConfig);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div className="erlform-form">
       {groups.map((group, index) => {
-        const fieldsContent = (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(12, minmax(0, 1fr))",
-              gap: 16,
-            }}
-          >
-            {group.fields.map((field) => (
-              <FieldRenderer
-                key={field.name}
-                form={form}
-                field={field}
-                values={form.state.values}
-                fieldConfig={fieldConfig}
-                fieldComponent={fieldComponent}
-              />
-            ))}
-          </div>
-        );
+        const fieldsContent = group.fields.map((field) => (
+          <FieldRenderer
+            key={field.name}
+            form={form}
+            field={field}
+            values={form.state.values}
+            fieldConfig={fieldConfig}
+            fieldComponent={fieldComponent}
+          />
+        ));
 
         if (!group.name) {
-          return <div key={`ungrouped-${index}`}>{fieldsContent}</div>;
+          return (
+            <div key={`ungrouped-${index}`} className="erlform-grid">
+              {fieldsContent}
+            </div>
+          );
         }
 
         return (

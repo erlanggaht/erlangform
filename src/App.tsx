@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
-import { ErlForm } from "erlangform";
 import { z } from "zod";
+import { ErlForm } from "./components";
 
 const schema = z.object({
   // Account
@@ -100,7 +100,8 @@ export default function App() {
                 label: "Username",
                 section: "Account",
                 layout: {
-                  colSpan: 6,
+                  colSpan: 12,
+                  md: 6,
                 },
               },
 
@@ -109,7 +110,8 @@ export default function App() {
                 type: "password",
                 section: "Account",
                 layout: {
-                  colSpan: 6,
+                  colSpan: 12,
+                  md: 6,
                 },
               },
 
@@ -158,7 +160,8 @@ export default function App() {
                   { label: "Japan", value: "jp" },
                 ],
                 layout: {
-                  colSpan: 6,
+                  colSpan: 12,
+                  md: 6,
                 },
               },
 
@@ -176,10 +179,10 @@ export default function App() {
                         { label: "Osaka", value: "osaka" },
                       ],
                 layout: {
-                  colSpan: 6,
+                  colSpan: 12,
+                  md: 6,
                 },
               },
-
               contacts: {
                 label: "Contacts",
                 section: "Contacts",

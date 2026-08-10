@@ -1,0 +1,52 @@
+.erlform-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.erlform-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.erlform-field {
+  min-width: 0;
+}
+
+.erlform-section {
+  width: 100%;
+}
+
+.erlform-section > header {
+  margin-bottom: 16px;
+}
+
+.erlform-field {
+  min-width: 0;
+  grid-column: span var(--erlform-col-span);
+}
+
+@media (min-width: 640px) {
+  .erlform-field {
+    grid-column: span var(--erlform-sm);
+  }
+}
+
+@media (min-width: 768px) {
+  .erlform-field {
+    grid-column: span var(--erlform-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  .erlform-field {
+    grid-column: span var(--erlform-lg);
+  }
+}
+
+@media (min-width: 1280px) {
+  .erlform-field {
+    grid-column: span var(--erlform-xl);
+  }
+}

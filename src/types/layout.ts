@@ -1,5 +1,7 @@
 export type FieldLayout = {
   colSpan?: number;
-  rowSpan?: number;
-  order?: number;
+  sm?: number;
+  md?: number;
+  lg?: number;
+  xl?: number;
 };
