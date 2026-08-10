@@ -1,11 +1,24 @@
 {
   "name": "erlangform",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsup",
+    "build:app": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -13,6 +26,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-form": "^1.33.3",
     "clsx": "^2.1.1",
+    "erlangform": "^0.1.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwind-merge": "^3.6.0",

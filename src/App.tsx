@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
+import { ErlForm } from "erlangform";
 import { z } from "zod";
-import { AutoForm } from "./components";
 
 const schema = z.object({
   // Account
@@ -79,7 +79,7 @@ export default function App() {
         </header>
 
         <section className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-          <AutoForm
+          <ErlForm
             form={form}
             schema={schema}
             sectionConfig={{
