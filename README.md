@@ -36,7 +36,7 @@ npm install @tanstack/react-form zod
 ```tsx
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
-import { AutoForm } from "erlangform";
+import { ErlForm } from "erlangform";
 
 const schema = z.object({
   username: z.string(),
@@ -65,7 +65,7 @@ export default function App() {
 
   return (
     <>
-      <AutoForm form={form} schema={schema} />
+      <ErlForm form={form} schema={schema} />
 
       <button onClick={() => form.handleSubmit()}>Submit</button>
     </>
@@ -80,7 +80,7 @@ ErlForm reads the Zod schema and automatically generates the appropriate fields.
 Use `fieldConfig` when you want to customize a field.
 
 ```tsx
-<AutoForm
+<ErlForm
   form={form}
   schema={schema}
   fieldConfig={{
@@ -183,7 +183,7 @@ const schema = z.object({
   country: z.string(),
 });
 
-<AutoForm
+<ErlForm
   form={form}
   schema={schema}
   fieldConfig={{
@@ -248,7 +248,7 @@ function MySelect({ field }: any) {
 Then register it:
 
 ```tsx
-<AutoForm
+<ErlForm
   form={form}
   schema={schema}
   fieldConfig={{
