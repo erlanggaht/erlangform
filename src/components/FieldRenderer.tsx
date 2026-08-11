@@ -1,7 +1,8 @@
 import type { ComponentRegistry } from "@/types/component-registry";
 import type { FieldConfig } from "@/types/field-options";
-import { joinPath } from "@/utils/field-path";
+import { getValueByPath, joinPath } from "@/utils/field-path";
 import { resolveFieldState } from "@/utils/resolve-field-state";
+import { useEffect } from "react";
 import { FieldArray } from "./field-array";
 import { ObjectField } from "./field-object/FieldObject";
 import { Field } from "./field/Field";
@@ -16,6 +17,25 @@ type FieldRendererProps = {
   fieldComponent?: ComponentRegistry;
 };
 
+function getEmptyValue(type: string) {
+  switch (type) {
+    case "boolean":
+      return false;
+
+    case "number":
+      return undefined;
+
+    case "array":
+      return [];
+
+    case "object":
+      return {};
+
+    default:
+      return "";
+  }
+}
+
 export function FieldRenderer({
   form,
   field,
@@ -26,35 +46,67 @@ export function FieldRenderer({
 }: FieldRendererProps) {
   const path = parentPath ? joinPath(parentPath, field.name) : field.name;
   const config = fieldConfig?.[field.name];
-  const state = resolveFieldState(config, values);
+  const conditionValues = parentPath ? getValueByPath(form.state.values, parentPath) : values;
+  const state = resolveFieldState(config, conditionValues);
   const layout = config?.layout;
 
-  if (!state.visible) {
-    if (config?.clearOnHide) {
-      // reset value
+  useEffect(() => {
+    if (!state.visible && config?.clearOnHide) {
+      form.setFieldValue(path, getEmptyValue(field.type));
     }
+  }, [state.visible, config?.clearOnHide, form, path, field.type]);
+
+  if (!state.visible) {
     return null;
   }
 
   const content = (() => {
     if (field.type === "array") {
-      return (
-        <FieldArray form={form} name={path}>
-          {(_item: any, index: number) => (
-            <div>
-              <h4>
-                {field.name} {index + 1}
-              </h4>
+      const arrayConfig = config?.array;
 
-              <ObjectField form={form} field={field.item} parentPath={joinPath(path, index)} />
-            </div>
-          )}
+      return (
+        <FieldArray
+          form={form}
+          name={path}
+          addLabel={arrayConfig?.addLabel}
+          removeLabel={arrayConfig?.removeLabel}
+        >
+          {(_item: any, index: number) => {
+            const itemLabel =
+              typeof arrayConfig?.itemLabel === "function"
+                ? arrayConfig.itemLabel(_item, index)
+                : arrayConfig?.itemLabel
+                  ? `${arrayConfig.itemLabel} ${index + 1}`
+                  : `${field.name} ${index + 1}`;
+
+            return (
+              <div className="erlform-array-item-content">
+                <h4 className="erlform-array-item-title">{itemLabel}</h4>
+
+                <ObjectField
+                  form={form}
+                  field={field.item}
+                  parentPath={joinPath(path, index)}
+                  fieldConfig={fieldConfig}
+                  fieldComponent={fieldComponent}
+                />
+              </div>
+            );
+          }}
         </FieldArray>
       );
     }
 
     if (field.type === "object") {
-      return <ObjectField form={form} field={field} parentPath={path} />;
+      return (
+        <ObjectField
+          form={form}
+          field={field}
+          parentPath={path}
+          fieldConfig={fieldConfig}
+          fieldComponent={fieldComponent}
+        />
+      );
     }
 
     return (

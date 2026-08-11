@@ -12,14 +12,7 @@ export type FieldMeta = {
 };
 
 function inferField(name: string, field: any): FieldMeta {
-  if (field instanceof z.ZodString) {
-    return {
-      name,
-      type: "string",
-    };
-  }
-
-  if (field instanceof z.ZodEmail) {
+  if (field instanceof z.ZodString || field instanceof z.ZodEmail) {
     return {
       name,
       type: "string",
@@ -52,7 +45,7 @@ function inferField(name: string, field: any): FieldMeta {
     return {
       name,
       type: "array",
-      item: inferField(name, field.element),
+      item: inferField("item", field.element),
     };
   }
 

@@ -2,32 +2,48 @@ import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import { ErlForm } from "./components";
 
+// 1. Skema Validasi Zod
 const schema = z.object({
-  // Account
+  // Seksi Account
   locked: z.boolean(),
-  username: z.string(),
-  password: z.string(),
+  username: z.string().min(3, "Username minimal 3 karakter"),
+  password: z.string().min(6, "Password minimal 6 karakter"),
 
-  // Profile
+  // Seksi Profile
   bio: z.string(),
-
-  // Access
   isAdmin: z.boolean(),
-  email: z.string().email(),
+  email: z.string().email("Format email tidak valid"),
 
-  // Company
+  // Seksi Pekerjaan (Company)
   isCompany: z.boolean(),
-  companyName: z.string(),
+  company: z.string(),
 
-  // Country
+  // Seksi Lokasi
   country: z.string(),
   city: z.string(),
 
-  // Contacts
+  // Seksi Contacts (Array Sederhana)
   contacts: z.array(
     z.object({
+      type: z.string(),
       phone: z.string(),
+      companyName: z.string(),
       active: z.boolean(),
+    }),
+  ),
+
+  // Seksi Companies (Array Terintegrasi / Nested Array)
+  companies: z.array(
+    z.object({
+      name: z.string(),
+      contacts: z.array(
+        z.object({
+          type: z.string(),
+          phone: z.string(),
+          companyName: z.string(),
+          active: z.boolean(),
+        }),
+      ),
     }),
   ),
 });
@@ -35,180 +51,262 @@ const schema = z.object({
 export default function App() {
   const form = useForm({
     defaultValues: {
-      locked: true,
+      locked: false,
       username: "Erlangga",
-      password: "12345678",
-
-      bio: "",
-
+      password: "password123",
+      bio: "Software Engineer & UI Enthusiast",
       isAdmin: false,
       email: "",
-
       isCompany: false,
-      companyName: "",
-
-      country: "Indonesia",
-      city: "",
-
+      company: "",
+      country: "id",
+      city: "jakarta",
       contacts: [
         {
-          phone: "",
+          type: "company",
+          phone: "08123456789",
+          companyName: "PT Erlangga Tech",
           active: true,
         },
       ],
+      companies: [
+        {
+          name: "Erlangga Studio",
+          contacts: [
+            {
+              type: "personal",
+              phone: "08987654321",
+              companyName: "",
+              active: true,
+            },
+          ],
+        },
+      ],
     },
-
     validators: {
       onChange: schema,
     },
-
+    canSubmitWhenInvalid: true,
     onSubmit: ({ value }) => {
-      console.log(value);
+      console.log("Form Submitted:", value);
+      alert("Form berhasil disubmit! Cek console log.");
     },
   });
 
-  return (
-    <main className="min-h-screen bg-slate-50 py-12">
-      <div className=" space-y-8 px-6">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">ErlForm Playground</h1>
+  console.log("Form Values:", form.getAllErrors());
 
+  return (
+    <main className="min-h-screen bg-slate-50 py-10">
+      <div className="mx-auto max-w-4xl space-y-8 px-4">
+        {/* Header Playground */}
+        <header className="space-y-2 border-b border-slate-200 pb-6">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            ErlForm Dynamic Playground 🚀
+          </h1>
           <p className="text-sm text-slate-600">
-            Build forms automatically from Zod schema with TanStack Form.
+            Demonstrasi pembuatan form otomatis berbasis <strong>Zod Schema</strong> dan{" "}
+            <strong>TanStack Form</strong>.
           </p>
         </header>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+        {/* Section Wrapper */}
+        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <ErlForm
             form={form}
             schema={schema}
+            // Configuration untuk Accordion/Seksi Form
             sectionConfig={{
               Account: {
-                title: "Account Information",
-                description: "Manage your account settings.",
+                title: "1. Akun & Keamanan",
+                description: "Kelola kredensial akun dan status penguncian.",
                 collapsible: true,
                 defaultOpen: true,
               },
+              Profile: {
+                title: "2. Profil Pengguna",
+                description: "Informasi bio dan hak akses sistem.",
+                collapsible: true,
+                defaultOpen: true,
+              },
+              Company: {
+                title: "3. Informasi Perusahaan",
+                description: "Isi jika Anda mendaftar atas nama badan usaha.",
+                collapsible: true,
+                defaultOpen: true,
+              },
+              Address: {
+                title: "4. Domisili & Lokasi",
+                description: "Pilihan kota dinamis tergantung negara yang dipilih.",
+                collapsible: true,
+                defaultOpen: true,
+              },
+              Contacts: {
+                title: "5. Daftar Kontak",
+                description: "Manajemen kontak bertipe personal atau perusahaan.",
+                collapsible: true,
+                defaultOpen: true,
+              },
+              Companies: {
+                title: "6. Perusahaan & Sub-Kontak (Nested)",
+                description: "Contoh pengisian data bertingkat (Array di dalam Array).",
+                collapsible: true,
+                defaultOpen: false,
+              },
             }}
+            // Configuration untuk setiap Field
             fieldConfig={{
+              // --- SEKSI ACCOUNT ---
               locked: {
-                label: "Locked",
+                label: "Kunci Akun (Lock)",
+                description: "Aktifkan untuk mengunci username dan password",
                 section: "Account",
               },
-
               username: {
                 label: "Username",
+                placeholder: "Masukkan username...",
                 section: "Account",
-                layout: {
-                  colSpan: 12,
-                  md: 6,
-                },
+                disableIf: (values) => values.locked, // Kunci jika 'locked' true
+                layout: { colSpan: 12, md: 6 },
               },
-
               password: {
                 label: "Password",
                 type: "password",
+                placeholder: "••••••••",
                 section: "Account",
-                layout: {
-                  colSpan: 12,
-                  md: 6,
-                },
+                disableIf: (values) => values.locked,
+                layout: { colSpan: 12, md: 6 },
               },
 
+              // --- SEKSI PROFILE ---
               bio: {
-                label: "Bio",
+                label: "Bio Singkat",
                 type: "textarea",
+                placeholder: "Tuliskan sedikit tentang diri Anda...",
                 section: "Profile",
-                layout: {
-                  colSpan: 12,
-                },
-                className: "border",
-                wrapperClassName: "flex flex-col gap-2",
+                layout: { colSpan: 12 },
               },
-
               isAdmin: {
-                label: "Is Admin",
-                section: "Access",
+                label: "Status Admin",
+                description: "Centang untuk membongkar akses email administrator",
+                section: "Profile",
               },
-
               email: {
-                label: "Email",
-                section: "Access",
-                layout: {
-                  colSpan: 6,
-                },
+                label: "Email Admin",
+                placeholder: "admin@domain.com",
+                section: "Profile",
+                showIf: (values) => values.isAdmin,
+                requiredIf: (values) => values.isAdmin,
+                clearOnHide: true,
+                layout: { colSpan: 12, md: 6 },
               },
 
+              // --- SEKSI COMPANY ---
               isCompany: {
-                label: "Is Company",
+                label: "Daftar Sebagai Perusahaan?",
                 section: "Company",
               },
-
-              companyName: {
-                label: "Company Name",
+              company: {
+                label: "Nama Perusahaan",
+                placeholder: "PT Nama Perusahaan",
                 section: "Company",
-                placeholder: "Enter your company name",
                 showIf: (values) => values.isCompany,
                 requiredIf: (values) => values.isCompany,
+                clearOnHide: true,
+                layout: { colSpan: 12, md: 6 },
               },
 
+              // --- SEKSI ADDRESS ---
               country: {
-                label: "Country",
-                section: "Country",
+                label: "Negara",
+                section: "Address",
                 options: [
                   { label: "Indonesia", value: "id" },
-                  { label: "Japan", value: "jp" },
+                  { label: "Jepang", value: "jp" },
                 ],
-                layout: {
-                  colSpan: 12,
-                  md: 6,
-                },
+                layout: { colSpan: 12, md: 6 },
               },
-
               city: {
-                label: "City",
-                section: "Country",
+                label: "Kota",
+                section: "Address",
+                // Options dinamis berdasarkan pilihan negara
                 options: (values) =>
                   values.country === "id"
                     ? [
                         { label: "Jakarta", value: "jakarta" },
                         { label: "Bandung", value: "bandung" },
+                        { label: "Surabaya", value: "surabaya" },
                       ]
                     : [
                         { label: "Tokyo", value: "tokyo" },
                         { label: "Osaka", value: "osaka" },
+                        { label: "Kyoto", value: "kyoto" },
                       ],
-                layout: {
-                  colSpan: 12,
-                  md: 6,
+                layout: { colSpan: 12, md: 6 },
+              },
+
+              // --- SEKSI ARRAY: CONTACTS ---
+              contacts: {
+                label: "Daftar Kontak",
+                section: "Contacts",
+                layout: { colSpan: 12 },
+                array: {
+                  itemLabel: (_, index) => `Kontak #${index + 1}`,
+                  addLabel: "+ Tambah Kontak Baru",
+                  removeLabel: "Hapus Kontak",
                 },
               },
-              contacts: {
-                label: "Contacts",
-                section: "Contacts",
+              type: {
+                label: "Tipe Kontak",
+                options: [
+                  { label: "Personal", value: "personal" },
+                  { label: "Perusahaan", value: "company" },
+                ],
+                layout: { colSpan: 12, md: 6 },
+              },
+              phone: {
+                label: "Nomor Telepon",
+                placeholder: "0812xxxxxxxx",
+                layout: { colSpan: 12, md: 6 },
+              },
+              companyName: {
+                label: "Nama PT/CV",
+                placeholder: "PT Nama Kontak",
+                showIf: (values) => values.type === "company",
+                requiredIf: (values) => values.type === "company",
+                clearOnHide: true,
+                layout: { colSpan: 12 },
+              },
+              active: {
+                label: "Status Aktif",
+              },
+
+              // --- SEKSI NESTED ARRAY: COMPANIES ---
+              companies: {
+                label: "Daftar Perusahaan",
+                section: "Companies",
+                layout: { colSpan: 12 },
+                array: {
+                  itemLabel: (item, index) =>
+                    item.name ? `🏢 ${item.name}` : `Perusahaan #${index + 1}`,
+                  addLabel: "+ Tambah Perusahaan",
+                  removeLabel: "Hapus Perusahaan",
+                },
               },
             }}
           />
-        </section>
 
-        <div className="flex justify-end">
-          <button
-            onClick={() => form.handleSubmit()}
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Submit
-          </button>
-        </div>
+          {/* Action Button */}
+          <div className="mt-8 flex justify-end border-t border-slate-100 pt-6">
+            <button
+              type="button"
+              onClick={() => form.handleSubmit()}
+              className="rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-slate-900 active:scale-[0.98] transition-all"
+            >
+              Simpan Data
+            </button>
+          </div>
+        </section>
       </div>
     </main>
   );
 }
-
-// function MySelectCustom({ field }: any) {
-//   return (
-//     <select value={field.state.value} onChange={(e) => field.handleChange(e.target.value)}>
-//       <option>Indonesia</option>
-//       <option>Japan</option>
-//     </select>
-//   );
-// }

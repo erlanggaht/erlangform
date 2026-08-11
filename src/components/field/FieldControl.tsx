@@ -1,6 +1,7 @@
 import type { ComponentRegistry } from "@/types/component-registry";
 import type { ResolvedFieldOptions } from "@/types/field-options";
 import type { FieldState } from "@/utils/resolve-field-state";
+import { useEffect } from "react";
 
 type FieldControlProps = {
   field: any;
@@ -13,6 +14,23 @@ type FieldControlProps = {
 export function FieldControl({ field, type, config, state, fieldComponent }: FieldControlProps) {
   const Custom = config?.component ?? fieldComponent?.[type as keyof ComponentRegistry];
 
+  useEffect(() => {
+    if (!config?.options) {
+      return;
+    }
+
+    const currentValue = field.state.value;
+
+    if (
+      currentValue !== undefined &&
+      currentValue !== "" &&
+      !config.options.some((option) => option.value === currentValue)
+    ) {
+      field.handleChange("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config?.options, field.state.value]);
+
   if (Custom) {
     return <Custom field={field} config={config} />;
   }
@@ -23,6 +41,7 @@ export function FieldControl({ field, type, config, state, fieldComponent }: Fie
         return (
           <select
             value={field.state.value ?? ""}
+            required={state.required}
             disabled={state.disabled}
             className={config?.className}
             onChange={(e) => field.handleChange(e.target.value)}

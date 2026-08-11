@@ -50,3 +50,147 @@
     grid-column: span var(--erlform-xl);
   }
 }
+
+.erlform-array {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.erlform-array-item {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 16px;
+  border: 1px solid #d9dee8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.erlform-array-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.erlform-array-header span {
+  font-weight: 600;
+}
+
+.erlform-array-header button {
+  border: 0;
+  background: transparent;
+  color: #dc2626;
+  cursor: pointer;
+}
+
+.erlform-array-add {
+  align-self: flex-start;
+}
+
+.erlform-array-add:hover {
+  background: #f8fafc;
+}
+
+.erlform-array-item-content {
+  width: 100%;
+  min-width: 0;
+}
+
+.erlform-array-item-title {
+  margin: 0 0 16px;
+  white-space: nowrap;
+}
+
+/* FIELD */
+.erlform-field {
+  min-width: 0;
+}
+
+.erlform-field label {
+  display: block;
+  margin-bottom: 6px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.erlform-field input,
+.erlform-field select,
+.erlform-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #111827;
+  font: inherit;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.erlform-field input:focus,
+.erlform-field select:focus,
+.erlform-field textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
+}
+
+.erlform-field input::placeholder,
+.erlform-field textarea::placeholder {
+  color: #9ca3af;
+}
+
+.erlform-field textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.erlform-field select {
+  cursor: pointer;
+}
+
+.erlform-field input:disabled,
+.erlform-field select:disabled,
+.erlform-field textarea:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.erlform-field input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin: 0;
+  accent-color: #4f46e5;
+  box-shadow: none;
+}
+
+.erlform-checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.erlform-checkbox-field label {
+  margin: 0;
+}
+
+.erlform-field p {
+  margin: 0 0 6px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.erlform-field [data-field-error],
+.erlform-error {
+  margin-top: 4px;
+  color: #dc2626;
+  font-size: 13px;
+}

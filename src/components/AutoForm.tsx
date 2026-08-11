@@ -26,33 +26,37 @@ export function AutoForm({
   const groups = groupFieldsBySection(fields, fieldConfig);
 
   return (
-    <div className="erlform-form">
-      {groups.map((group, index) => {
-        const fieldsContent = group.fields.map((field) => (
-          <FieldRenderer
-            key={field.name}
-            form={form}
-            field={field}
-            values={form.state.values}
-            fieldConfig={fieldConfig}
-            fieldComponent={fieldComponent}
-          />
-        ));
+    <form.Subscribe selector={(state: any) => state.values}>
+      {(values: any) => (
+        <div className="erlform-form">
+          {groups.map((group, index) => {
+            const fieldsContent = group.fields.map((field) => (
+              <FieldRenderer
+                key={field.name}
+                form={form}
+                field={field}
+                values={values}
+                fieldConfig={fieldConfig}
+                fieldComponent={fieldComponent}
+              />
+            ));
 
-        if (!group.name) {
-          return (
-            <div key={`ungrouped-${index}`} className="erlform-grid">
-              {fieldsContent}
-            </div>
-          );
-        }
+            if (!group.name) {
+              return (
+                <div key={`ungrouped-${index}`} className="erlform-grid">
+                  {fieldsContent}
+                </div>
+              );
+            }
 
-        return (
-          <FieldSection key={group.name} name={group.name} config={sectionConfig?.[group.name]}>
-            {fieldsContent}
-          </FieldSection>
-        );
-      })}
-    </div>
+            return (
+              <FieldSection key={group.name} name={group.name} config={sectionConfig?.[group.name]}>
+                {fieldsContent}
+              </FieldSection>
+            );
+          })}
+        </div>
+      )}
+    </form.Subscribe>
   );
 }

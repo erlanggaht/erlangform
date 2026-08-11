@@ -11,5 +11,9 @@ export function FieldError({ config, errors }: FieldErrorProps) {
     return null;
   }
 
-  return <p className={config?.descriptionClassName}>{normalizeError(errors[0])}</p>;
+  return (
+    <span className={`erlform-error ${config?.descriptionClassName}`}>
+      {normalizeError(errors[0])}
+    </span>
+  );
 }

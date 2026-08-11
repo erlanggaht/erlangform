@@ -22,6 +22,11 @@ export type FieldOptions = {
 
   component?: ComponentType<any>;
 
+  array?: {
+    itemLabel?: string | ((item: any, index: number) => string);
+    addLabel?: string;
+    removeLabel?: string;
+  };
   showIf?: (values: any) => boolean;
   disableIf?: (values: any) => boolean;
   readOnlyIf?: (values: any) => boolean;

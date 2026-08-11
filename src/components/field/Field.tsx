@@ -1,6 +1,6 @@
 import type { ComponentRegistry } from "@/types/component-registry";
 import type { FieldOptions } from "@/types/field-options";
-import { resolveFieldConfig } from "@/types/resolve-field";
+import { resolveFieldConfig } from "@/utils/resolve-field";
 import type { FieldState } from "@/utils/resolve-field-state";
 import { FieldControl } from "./FieldControl";
 import { FieldDescription } from "./FieldDesctription";
@@ -24,7 +24,7 @@ export function Field({ form, name, type, config, state, fieldComponent }: Field
       {(field: any) => {
         if (type === "boolean") {
           return (
-            <div className={`flex items-center gap-2 ${config?.wrapperClassName}`}>
+            <div className={`erlform-checkbox-field ${config?.wrapperClassName}`}>
               <FieldControl
                 config={resolvedConfig}
                 field={field}
