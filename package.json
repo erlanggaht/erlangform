@@ -1,6 +1,6 @@
 {
   "name": "erlangform",
-  "version": "0.1.3",
+  "version": "0.2.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
