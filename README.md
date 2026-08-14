@@ -794,7 +794,7 @@ label / placeholder / description / options
 Versi saat ini:
 
 ```text
-0.1.0
+0.2.0
 ```
 
 ErlForm masih dalam tahap pengembangan aktif.
