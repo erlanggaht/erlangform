@@ -12,7 +12,7 @@ export function FieldError({ config, errors }: FieldErrorProps) {
   }
 
   return (
-    <span className={`erlform-error ${config?.descriptionClassName}`}>
+    <span className={`erlform-error ${config?.errorClassName ?? ""}`}>
       {normalizeError(errors[0])}
     </span>
   );

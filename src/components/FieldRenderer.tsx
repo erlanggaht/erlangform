@@ -36,6 +36,30 @@ function getEmptyValue(type: string) {
   }
 }
 
+function getDefaultValue(field: any): any {
+  switch (field.type) {
+    case "string":
+      return "";
+
+    case "number":
+      return undefined;
+
+    case "boolean":
+      return false;
+
+    case "array":
+      return [];
+
+    case "object":
+      return Object.fromEntries(
+        (field.fields ?? []).map((child: any) => [child.name, getDefaultValue(child)]),
+      );
+
+    default:
+      return "";
+  }
+}
+
 export function FieldRenderer({
   form,
   field,
@@ -46,7 +70,7 @@ export function FieldRenderer({
 }: FieldRendererProps) {
   const path = parentPath ? joinPath(parentPath, field.name) : field.name;
   const config = fieldConfig?.[field.name];
-  const conditionValues = parentPath ? getValueByPath(form.state.values, parentPath) : values;
+  const conditionValues = parentPath ? getValueByPath(values, parentPath) : values;
   const state = resolveFieldState(config, conditionValues);
   const layout = config?.layout;
 
@@ -70,6 +94,7 @@ export function FieldRenderer({
           name={path}
           addLabel={arrayConfig?.addLabel}
           removeLabel={arrayConfig?.removeLabel}
+          createItem={() => getDefaultValue(field.item)}
         >
           {(_item: any, index: number) => {
             const itemLabel =

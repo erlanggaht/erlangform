@@ -1,5 +1,13 @@
 export function joinPath(parent: string, child: string | number) {
-  return parent ? `${parent}.${child}` : String(child);
+  if (!parent) {
+    return String(child);
+  }
+
+  if (typeof child === "number") {
+    return `${parent}[${child}]`;
+  }
+
+  return `${parent}.${child}`;
 }
 
 export function getValueByPath(values: any, path: string): any {

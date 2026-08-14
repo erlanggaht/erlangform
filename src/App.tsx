@@ -26,7 +26,7 @@ const schema = z.object({
   contacts: z.array(
     z.object({
       type: z.string(),
-      phone: z.string(),
+      phone: z.string().min(4, "Phone minimal 10 karakter"),
       companyName: z.string(),
       active: z.boolean(),
     }),
@@ -36,10 +36,11 @@ const schema = z.object({
   companies: z.array(
     z.object({
       name: z.string(),
+
       contacts: z.array(
         z.object({
-          type: z.string(),
-          phone: z.string(),
+          type: z.string().min(1, "Type wajib dipilih"),
+          phone: z.string().min(10, "Phone minimal 10 karakter"),
           companyName: z.string(),
           active: z.boolean(),
         }),
@@ -63,21 +64,21 @@ export default function App() {
       city: "jakarta",
       contacts: [
         {
-          type: "company",
+          type: "x",
           phone: "08123456789",
-          companyName: "PT Erlangga Tech",
+          companyName: "",
           active: true,
         },
       ],
       companies: [
         {
-          name: "Erlangga Studio",
+          name: "Erlangga",
           contacts: [
             {
               type: "personal",
-              phone: "08987654321",
+              phone: "123",
               companyName: "",
-              active: true,
+              active: false,
             },
           ],
         },
@@ -86,14 +87,11 @@ export default function App() {
     validators: {
       onChange: schema,
     },
-    canSubmitWhenInvalid: true,
     onSubmit: ({ value }) => {
       console.log("Form Submitted:", value);
       alert("Form berhasil disubmit! Cek console log.");
     },
   });
-
-  console.log("Form Values:", form.getAllErrors());
 
   return (
     <main className="min-h-screen bg-slate-50 py-10">

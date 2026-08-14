@@ -22,6 +22,11 @@ export function Field({ form, name, type, config, state, fieldComponent }: Field
   return (
     <form.Field name={name}>
       {(field: any) => {
+        console.log({
+          name,
+          value: field.state.value,
+          errors: field.state.meta.errors,
+        });
         if (type === "boolean") {
           return (
             <div className={`erlform-checkbox-field ${config?.wrapperClassName}`}>

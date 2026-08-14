@@ -7,6 +7,7 @@ type FieldArrayProps = {
   name: string;
   addLabel?: string;
   removeLabel?: string;
+  createItem?: () => any;
   children: (item: any, index: number) => ReactNode;
 };
 
@@ -15,12 +16,13 @@ export function FieldArray({
   name,
   addLabel = "Add",
   removeLabel = "Remove",
+  createItem = () => ({}),
   children,
 }: FieldArrayProps) {
   const items = useStore(form.store, (state: any) => getValueByPath(state.values, name) ?? []);
 
-  function add(value = {}) {
-    form.setFieldValue(name, [...items, value]);
+  function add() {
+    form.setFieldValue(name, [...items, createItem()]);
   }
 
   function remove(index: number) {
@@ -46,7 +48,7 @@ export function FieldArray({
         </div>
       ))}
 
-      <button type="button" className="erlform-array-add" onClick={() => add({})}>
+      <button type="button" className="erlform-array-add" onClick={add}>
         {addLabel}
       </button>
     </div>
