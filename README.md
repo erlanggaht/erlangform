@@ -1,47 +1,85 @@
 # ErlForm
 
-Schema-driven form builder untuk React menggunakan [TanStack Form](https://tanstack.com/form) dan [Zod](https://zod.dev/).
+Schema-driven form builder for React powered by **TanStack Form** and **Zod**.
 
-ErlForm membaca struktur dari Zod schema lalu membuat field secara otomatis, sambil tetap memberikan kontrol penuh melalui `fieldConfig`.
+ErlForm reads a Zod object schema and automatically renders form fields while still giving you control over UI and behavior through `fieldConfig`.
 
-## Fitur
+> Current package version: **0.4.0**
 
-- Generate field otomatis dari Zod schema
-- Integrasi dengan TanStack Form
-- Konfigurasi field per nama field
-- Conditional logic:
+## Baru di v0.4.0
+
+Versi ini menyelesaikan fondasi type-safety yang dimulai pada seri v0.3.x tanpa mengubah cara dasar menggunakan `ErlForm`.
+
+- `FieldConfig<FormValues>` sekarang mengenali seluruh key dari schema, termasuk object dan array bertingkat.
+- Callback field tingkat atas menerima root form values yang bertipe.
+- Callback field di dalam object atau array menerima contextual values yang sesuai.
+- `itemLabel(item, index)` menerima tipe item array sebenarnya, bukan `any`.
+- Dynamic resolver untuk label, placeholder, description, dan options bertipe end-to-end.
+- Custom field component memiliki `FieldComponentProps<TValue, TValues>` yang bertipe.
+- Component registry mendukung field string, number, dan boolean dengan value yang tepat.
+- Metadata hasil inferensi Zod tidak lagi memakai `any`.
+- Helper nested path menggunakan `unknown` dan pemeriksaan object yang aman.
+- Public type exports ditambah untuk kebutuhan integrasi lanjutan.
+
+Contoh konfigurasi nested yang sekarang type-safe:
+
+```tsx
+type FormValues = z.infer<typeof schema>;
+
+const fieldConfig = {
+  username: {
+    disableIf: (values) => values.locked,
+  },
+  contacts: {
+    array: {
+      itemLabel: (item, index) => `${index + 1}. ${item.phone}`,
+    },
+  },
+  companyName: {
+    showIf: (item) => item.type === "company",
+  },
+} satisfies FieldConfig<FormValues>;
+```
+
+## Features
+
+- Generate fields from a Zod object schema
+- TanStack Form integration
+- Zod validation
+- TypeScript support
+- Field configuration with `fieldConfig`
+- Conditional fields with:
   - `showIf`
   - `disableIf`
   - `readOnlyIf`
   - `requiredIf`
-- `clearOnHide` untuk mereset value ketika field disembunyikan
-- Select native dengan `options`
-- Dynamic options berdasarkan nilai form
-- Custom field component
-- Section dan section configuration
-- Responsive 12-column grid layout
-- Array field
-- Nested array
-- Object field
-- Label item array yang bisa statis atau dinamis berdasarkan index/item
-- Add/remove label yang dapat dikustomisasi
-- Nested field path yang kompatibel dengan error validation TanStack Form
-- Error message dari Zod/TanStack Form ditampilkan di level field
-- TypeScript support
+- Reset hidden fields with `clearOnHide`
+- Dynamic labels, placeholders, descriptions, and select options
+- Native select fields
+- Custom field components
+- Configurable sections
+- Collapsible sections
+- Responsive 12-column layout
+- Object fields
+- Array fields
+- Nested arrays and objects
+- Custom array add/remove labels
+- Static or dynamic array item labels
+- Field-level validation errors
 
-## Instalasi
+## Installation
 
 ```bash
 npm install erlangform
 ```
 
-Dependency yang dibutuhkan:
+ErlForm is built around:
 
-```bash
-npm install @tanstack/react-form zod
-```
+- React
+- TanStack Form
+- Zod
 
-## Penggunaan Dasar
+## Quick Start
 
 ```tsx
 import { useForm } from "@tanstack/react-form";
@@ -49,8 +87,8 @@ import { z } from "zod";
 import { ErlForm } from "erlangform";
 
 const schema = z.object({
-  username: z.string(),
-  email: z.string().email(),
+  username: z.string().min(1, "Username is required"),
+  email: z.email("Invalid email"),
   age: z.number(),
   isAdmin: z.boolean(),
 });
@@ -85,13 +123,45 @@ export default function App() {
 }
 ```
 
-ErlForm menggunakan Zod schema sebagai sumber struktur form. Validasi tetap dapat dijalankan oleh TanStack Form menggunakan schema yang sama.
+The Zod schema defines the form structure, while TanStack Form manages form state and validation.
 
----
+## Supported Schema Types
 
-## Konfigurasi Field
+Automatic field inference currently supports:
 
-Gunakan `fieldConfig` untuk mengubah tampilan atau perilaku field.
+| Zod schema     | Rendered field       |
+| -------------- | -------------------- |
+| String / Email | Text input           |
+| Number         | Number input         |
+| Boolean        | Checkbox             |
+| Object         | Nested object fields |
+| Array          | Dynamic array fields |
+
+Other Zod schema types are not automatically rendered yet.
+
+## ErlForm Props
+
+```tsx
+<ErlForm
+  form={form}
+  schema={schema}
+  fieldConfig={fieldConfig}
+  sectionConfig={sectionConfig}
+  fieldComponent={fieldComponent}
+/>
+```
+
+| Prop             | Description                                       |
+| ---------------- | ------------------------------------------------- |
+| `form`           | TanStack Form instance                            |
+| `schema`         | Zod object schema used to generate the form       |
+| `fieldConfig`    | Configuration for individual fields               |
+| `sectionConfig`  | Configuration for field sections                  |
+| `fieldComponent` | Custom component registry by primitive field type |
+
+## Field Configuration
+
+Use `fieldConfig` to customize individual fields.
 
 ```tsx
 <ErlForm
@@ -100,138 +170,145 @@ Gunakan `fieldConfig` untuk mengubah tampilan atau perilaku field.
   fieldConfig={{
     username: {
       label: "Username",
-      placeholder: "Masukkan username",
+      placeholder: "Enter your username",
     },
 
     email: {
-      label: "Email",
-      placeholder: "Masukkan email",
+      label: "Email Address",
+      description: "We will never share your email.",
     },
 
     age: {
-      label: "Umur",
+      label: "Age",
     },
   }}
 />
 ```
 
-### Properti `FieldOptions`
+### FieldOptions
 
-| Properti               | Keterangan                                                |
-| ---------------------- | --------------------------------------------------------- |
-| `label`                | Label field, bisa string atau resolver berdasarkan values |
-| `type`                 | `text`, `password`, `textarea`, `number`, atau `checkbox` |
-| `placeholder`          | Placeholder field                                         |
-| `description`          | Deskripsi field                                           |
-| `options`              | Option select, bisa statis atau resolver                  |
-| `component`            | Custom component                                          |
-| `showIf`               | Menentukan apakah field ditampilkan                       |
-| `disableIf`            | Menentukan apakah field disabled                          |
-| `readOnlyIf`           | Menentukan apakah field readonly                          |
-| `requiredIf`           | Menentukan apakah field required                          |
-| `clearOnHide`          | Reset value ketika field menjadi hidden                   |
-| `section`              | Nama section                                              |
-| `layout`               | Konfigurasi grid                                          |
-| `className`            | Class untuk control                                       |
-| `wrapperClassName`     | Class wrapper field                                       |
-| `labelClassName`       | Class label                                               |
-| `descriptionClassName` | Class description                                         |
-| `errorClassName`       | Class error                                               |
-| `array`                | Konfigurasi array field                                   |
+Available configuration:
 
----
+| Option                 | Description                                          |
+| ---------------------- | ---------------------------------------------------- |
+| `label`                | Field label, static or dynamic                       |
+| `type`                 | UI variant such as `text`, `password`, or `textarea` |
+| `placeholder`          | Input placeholder, static or dynamic                 |
+| `description`          | Field description, static or dynamic                 |
+| `options`              | Select options, static or dynamic                    |
+| `component`            | Custom React component for the field                 |
+| `showIf`               | Controls field visibility                            |
+| `disableIf`            | Controls disabled state                              |
+| `readOnlyIf`           | Controls readonly state                              |
+| `requiredIf`           | Controls required state                              |
+| `clearOnHide`          | Resets the field value when hidden                   |
+| `section`              | Assigns the field to a section                       |
+| `layout`               | Responsive grid configuration                        |
+| `className`            | Class for the form control                           |
+| `wrapperClassName`     | Class for the field wrapper                          |
+| `labelClassName`       | Class for the label                                  |
+| `descriptionClassName` | Class for the description                            |
+| `errorClassName`       | Class for validation errors                          |
+| `array`                | Array-specific configuration                         |
 
-## Conditional Logic
+## Input Types
 
-Conditional logic menggunakan nilai form saat ini.
+### Text
 
-### `showIf`
-
-Menampilkan field hanya ketika kondisi terpenuhi.
-
-```tsx
-fieldConfig={{
-  companyName: {
-    label: "Nama Perusahaan",
-    showIf: (values) => values.isCompany,
-  },
-}}
-```
-
-### `disableIf`
+A Zod string renders as a regular text input by default.
 
 ```tsx
 fieldConfig={{
   username: {
     label: "Username",
-    disableIf: (values) => values.locked,
+    placeholder: "Enter username",
   },
 }}
 ```
 
-### `readOnlyIf`
+### Password
 
 ```tsx
 fieldConfig={{
-  username: {
-    label: "Username",
-    readOnlyIf: (values) => values.locked,
+  password: {
+    label: "Password",
+    type: "password",
   },
 }}
 ```
 
-### `requiredIf`
+### Textarea
+
+```tsx
+fieldConfig={{
+  bio: {
+    label: "Biography",
+    type: "textarea",
+  },
+}}
+```
+
+### Number
+
+A Zod number automatically renders a number input.
+
+```tsx
+const schema = z.object({
+  age: z.number(),
+});
+```
+
+### Checkbox
+
+A Zod boolean automatically renders a checkbox.
+
+```tsx
+const schema = z.object({
+  acceptTerms: z.boolean(),
+});
+```
+
+## Select Fields
+
+A string field becomes a native `<select>` when `options` are provided.
+
+```tsx
+const schema = z.object({
+  country: z.string(),
+});
+
+<ErlForm
+  form={form}
+  schema={schema}
+  fieldConfig={{
+    country: {
+      label: "Country",
+      options: [
+        { label: "Indonesia", value: "id" },
+        { label: "Japan", value: "jp" },
+      ],
+    },
+  }}
+/>;
+```
+
+## Dynamic Configuration
+
+`label`, `placeholder`, `description`, and `options` can be resolver functions.
 
 ```tsx
 fieldConfig={{
   companyName: {
-    label: "Nama Perusahaan",
-    requiredIf: (values) => values.isCompany,
+    label: (values) =>
+      values.isCompany ? "Company Name" : "Full Name",
+
+    placeholder: (values) =>
+      values.isCompany
+        ? "Enter company name"
+        : "Enter your full name",
   },
-}}
-```
 
-### `clearOnHide`
-
-Jika field disembunyikan dan `clearOnHide` bernilai `true`, value field akan direset.
-
-```tsx
-fieldConfig={{
-  companyName: {
-    label: "Nama Perusahaan",
-    showIf: (values) => values.isCompany,
-    clearOnHide: true,
-  },
-}}
-```
-
-Dengan demikian value lama tidak tetap tersimpan ketika field sudah tidak relevan.
-
----
-
-## Resolver untuk Label, Placeholder, Description, dan Options
-
-Beberapa konfigurasi dapat berupa nilai langsung atau function yang menerima `values`.
-
-```tsx
-fieldConfig={{
-  label: (values) =>
-    values.isCompany ? "Nama Perusahaan" : "Nama Lengkap",
-
-  placeholder: (values) =>
-    values.isCompany
-      ? "Masukkan nama perusahaan"
-      : "Masukkan nama lengkap",
-}}
-```
-
-Dynamic options:
-
-```tsx
-fieldConfig={{
   city: {
-    label: "Kota",
-
     options: (values) =>
       values.country === "id"
         ? [
@@ -246,55 +323,91 @@ fieldConfig={{
 }}
 ```
 
----
+If the currently selected value no longer exists after dynamic options change, ErlForm resets the value to an empty string.
 
-## Select
+## Conditional Fields
 
-String field dapat menjadi native `<select>` dengan memberikan `options`.
+### showIf
+
+Only render a field when a condition is true.
 
 ```tsx
-const schema = z.object({
-  country: z.string(),
-});
-
-<ErlForm
-  form={form}
-  schema={schema}
-  fieldConfig={{
-    country: {
-      label: "Negara",
-      options: [
-        { label: "Indonesia", value: "id" },
-        { label: "Jepang", value: "jp" },
-      ],
-    },
-  }}
-/>;
+fieldConfig={{
+  companyName: {
+    label: "Company Name",
+    showIf: (values) => values.isCompany,
+  },
+}}
 ```
 
-Jika `options` tidak diberikan, string field tetap menjadi input text biasa.
-
----
-
-## Custom Component
-
-Field tertentu dapat diganti dengan component sendiri.
+### disableIf
 
 ```tsx
-function MySelect({ field }: any) {
+fieldConfig={{
+  username: {
+    disableIf: (values) => values.locked,
+  },
+}}
+```
+
+### readOnlyIf
+
+```tsx
+fieldConfig={{
+  username: {
+    readOnlyIf: (values) => values.locked,
+  },
+}}
+```
+
+### requiredIf
+
+```tsx
+fieldConfig={{
+  companyName: {
+    requiredIf: (values) => values.isCompany,
+  },
+}}
+```
+
+### clearOnHide
+
+Use `clearOnHide` when hidden values should not remain in the form state.
+
+```tsx
+fieldConfig={{
+  companyName: {
+    showIf: (values) => values.isCompany,
+    clearOnHide: true,
+  },
+}}
+```
+
+For top-level fields, conditional callbacks receive the root form values.
+
+For nested fields, conditional callbacks receive the values of their current parent object.
+
+## Custom Components
+
+A field can use its own React component.
+
+```tsx
+function CountrySelect({ field, config }: any) {
   return (
     <select
       value={field.state.value ?? ""}
+      className={config?.className}
       onChange={(event) => field.handleChange(event.target.value)}
     >
+      <option value="">Select country</option>
       <option value="id">Indonesia</option>
-      <option value="jp">Jepang</option>
+      <option value="jp">Japan</option>
     </select>
   );
 }
 ```
 
-Kemudian:
+Then assign it through `fieldConfig`:
 
 ```tsx
 <ErlForm
@@ -302,20 +415,42 @@ Kemudian:
   schema={schema}
   fieldConfig={{
     country: {
-      label: "Negara",
-      component: MySelect,
+      label: "Country",
+      component: CountrySelect,
     },
   }}
 />
 ```
 
-Custom component menerima `field` dan `config`.
+Custom components receive:
 
----
+```ts
+{
+  (field, config);
+}
+```
 
-## Section
+### Component Registry
 
-Field dapat dikelompokkan berdasarkan nama section.
+You can also provide default custom controls by inferred field type.
+
+```tsx
+<ErlForm
+  form={form}
+  schema={schema}
+  fieldComponent={{
+    string: CustomTextInput,
+    number: CustomNumberInput,
+    boolean: CustomCheckbox,
+  }}
+/>
+```
+
+Field-level `component` configuration takes precedence over the component registry.
+
+## Sections
+
+Assign fields to sections using `section`.
 
 ```tsx
 fieldConfig={{
@@ -326,8 +461,8 @@ fieldConfig={{
 
   password: {
     label: "Password",
-    section: "Account",
     type: "password",
+    section: "Account",
   },
 
   email: {
@@ -337,9 +472,7 @@ fieldConfig={{
 }}
 ```
 
-Field dengan nama section yang sama akan dirender dalam section yang sama.
-
-Section juga dapat dikonfigurasi:
+Configure sections through `sectionConfig`:
 
 ```tsx
 <ErlForm
@@ -347,30 +480,44 @@ Section juga dapat dikonfigurasi:
   schema={schema}
   sectionConfig={{
     Account: {
-      title: "Informasi Akun",
-      description: "Kelola pengaturan akun.",
+      title: "Account Information",
+      description: "Manage your account credentials.",
       collapsible: true,
       defaultOpen: true,
+    },
+
+    Profile: {
+      title: "Profile",
     },
   }}
 />
 ```
 
----
+Available section configuration:
 
-## Layout
+| Option             | Description                          |
+| ------------------ | ------------------------------------ |
+| `title`            | Section title                        |
+| `description`      | Section description                  |
+| `className`        | Section class                        |
+| `headerClassName`  | Section header class                 |
+| `contentClassName` | Section content class                |
+| `collapsible`      | Render section using `<details>`     |
+| `defaultOpen`      | Open a collapsible section initially |
 
-ErlForm menggunakan grid 12 kolom.
+## Responsive Layout
+
+ErlForm uses a 12-column grid model.
 
 ```tsx
 fieldConfig={{
-  username: {
+  firstName: {
     layout: {
       colSpan: 6,
     },
   },
 
-  password: {
+  lastName: {
     layout: {
       colSpan: 6,
     },
@@ -384,7 +531,7 @@ fieldConfig={{
 }}
 ```
 
-Responsive breakpoint juga dapat digunakan:
+Responsive values are also supported:
 
 ```tsx
 layout: {
@@ -396,23 +543,40 @@ layout: {
 }
 ```
 
-Contoh:
+The supported breakpoints correspond to:
 
 ```text
-┌──────────────────┬──────────────────┐
-│     Username     │     Password     │
-│      6 cols      │      6 cols      │
-├─────────────────────────────────────┤
-│                 Bio                  │
-│               12 cols                │
-└─────────────────────────────────────┘
+sm  >= 640px
+md  >= 768px
+lg  >= 1024px
+xl  >= 1280px
 ```
 
----
+> The responsive layout depends on ErlForm's CSS class definitions. The current package build does not automatically expose the demo stylesheet, so applications consuming the npm package should provide the required styling themselves.
 
-## Array
+## Object Fields
 
-ErlForm mendukung array dari Zod.
+Nested Zod objects are rendered recursively.
+
+```tsx
+const schema = z.object({
+  profile: z.object({
+    firstName: z.string(),
+    lastName: z.string(),
+  }),
+});
+```
+
+The generated field paths follow the nested structure:
+
+```text
+profile.firstName
+profile.lastName
+```
+
+## Arrays
+
+ErlForm supports Zod arrays.
 
 ```tsx
 const schema = z.object({
@@ -426,7 +590,7 @@ const schema = z.object({
 });
 ```
 
-Default value:
+Provide array values through TanStack Form:
 
 ```tsx
 const form = useForm({
@@ -443,70 +607,46 @@ const form = useForm({
   validators: {
     onChange: schema,
   },
-
-  onSubmit: ({ value }) => {
-    console.log(value);
-  },
 });
 ```
 
-Konfigurasi array:
+Configure array controls:
 
 ```tsx
 fieldConfig={{
   contacts: {
-    label: "Contacts",
     array: {
       itemLabel: "Contact",
-      addLabel: "Tambah Contact",
-      removeLabel: "Hapus Contact",
+      addLabel: "Add Contact",
+      removeLabel: "Remove Contact",
     },
   },
 }}
 ```
 
-Hasilnya setiap item memiliki header dan tombol remove, serta tombol add di bagian bawah.
+When a new item is added, ErlForm creates a default value based on the inferred item schema.
 
----
+## Dynamic Array Labels
 
-## Label Item Array Dinamis
-
-`itemLabel` dapat berupa function:
+`itemLabel` can be a function that receives the current item and index.
 
 ```tsx
 fieldConfig={{
   companies: {
-    label: "Companies",
     array: {
       itemLabel: (item, index) =>
         item.name
           ? `Company: ${item.name}`
           : `Company ${index + 1}`,
 
-      addLabel: "Tambah Company",
-      removeLabel: "Hapus Company",
+      addLabel: "Add Company",
+      removeLabel: "Remove Company",
     },
   },
 }}
 ```
 
-Function menerima:
-
-```ts
-(item, index);
-```
-
-sehingga label dapat mengikuti value item saat ini.
-
-Contoh:
-
-```text
-Company: Erlangga
-Company: Acme
-Company 3
-```
-
-Jika `itemLabel` hanya string:
+Or use a static prefix:
 
 ```tsx
 array: {
@@ -514,7 +654,7 @@ array: {
 }
 ```
 
-maka hasilnya:
+which produces labels such as:
 
 ```text
 Contact 1
@@ -522,11 +662,11 @@ Contact 2
 Contact 3
 ```
 
----
+> Current implementation note: array containers also render their own `Item N` header above the configured item content.
 
-## Nested Array
+## Nested Arrays
 
-Array dapat berisi object yang memiliki array lain.
+Arrays can contain nested objects and other arrays.
 
 ```tsx
 const schema = z.object({
@@ -546,78 +686,46 @@ const schema = z.object({
 });
 ```
 
-Contoh konfigurasi:
-
-```tsx
-fieldConfig={{
-  companies: {
-    label: "Companies",
-
-    array: {
-      itemLabel: (item, index) =>
-        item.name
-          ? `Company: ${item.name}`
-          : `Company ${index + 1}`,
-
-      addLabel: "Tambah Company",
-      removeLabel: "Hapus Company",
-    },
-  },
-
-  contacts: {
-    label: "Contacts",
-
-    array: {
-      itemLabel: "Contact",
-      addLabel: "Tambah Contact",
-      removeLabel: "Hapus Contact",
-    },
-  },
-}}
-```
-
-ErlForm akan membentuk nested path seperti:
+Generated paths follow TanStack Form's nested field format:
 
 ```text
 companies[0].name
 companies[0].contacts[0].type
 companies[0].contacts[0].phone
-companies[0].contacts[1].type
 ```
 
-Format ini juga digunakan agar error validation nested dari TanStack Form dapat terhubung kembali ke field yang sesuai.
+Nested fields are recursively passed back through the same `FieldRenderer`.
 
----
+### Nested Field Configuration
 
-## Object Field
+`fieldConfig` is currently resolved using the field's name rather than its complete nested path.
 
-Object di dalam Zod schema juga didukung.
+For example:
+
+```tsx
+fieldConfig={{
+  phone: {
+    label: "Phone Number",
+  },
+}}
+```
+
+will apply to nested fields named `phone`.
+
+This also means fields with the same name in different nested objects currently share the same configuration.
+
+## Validation
+
+Validation is handled by TanStack Form. A Zod schema can be used as the validator.
 
 ```tsx
 const schema = z.object({
-  profile: z.object({
-    firstName: z.string(),
-    lastName: z.string(),
-  }),
-});
-```
-
-Field di dalam object akan dirender berdasarkan struktur object tersebut.
-
----
-
-## Validation dan Error
-
-ErlForm menggunakan TanStack Form untuk state dan validation, sementara Zod dapat digunakan sebagai validator.
-
-```tsx
-const schema = z.object({
-  email: z.string().email("Format email tidak valid"),
+  email: z.email("Invalid email"),
 
   contacts: z.array(
     z.object({
-      type: z.string().min(1, "Type wajib dipilih"),
-      phone: z.string().min(10, "Phone minimal 10 karakter"),
+      type: z.string().min(1, "Type is required"),
+      phone: z.string().min(10, "Phone must contain at least 10 characters"),
     }),
   ),
 });
@@ -643,71 +751,25 @@ const form = useForm({
 });
 ```
 
-Error akan ditampilkan pada field yang sesuai.
+ErlForm displays the first validation error associated with a field.
 
-Untuk nested array, misalnya:
+## Styling
 
-```text
-companies[0].contacts[0].type
-```
-
-error dari Zod juga akan dipetakan ke field tersebut.
-
-Contoh error:
-
-```text
-Type wajib dipilih
-```
-
----
-
-## Submit Invalid
-
-Jika ingin melihat error ketika submit gagal:
-
-```tsx
-const form = useForm({
-  // ...
-
-  validators: {
-    onChange: schema,
-  },
-
-  onSubmitInvalid: (props) => {
-    console.log(props.formApi.getAllErrors());
-  },
-
-  onSubmit: ({ value }) => {
-    console.log(value);
-  },
-});
-```
-
-`getAllErrors()` dapat menghasilkan error dengan path seperti:
-
-```text
-email
-contacts[0].type
-companies[0].contacts[0].type
-companies[0].contacts[0].phone
-```
-
----
-
-## Field Error Styling
-
-Error dapat diberi class sendiri:
+ErlForm exposes class hooks through `fieldConfig`:
 
 ```tsx
 fieldConfig={{
   email: {
-    label: "Email",
-    errorClassName: "text-red-500 text-sm",
+    className: "input",
+    wrapperClassName: "field",
+    labelClassName: "field-label",
+    descriptionClassName: "field-description",
+    errorClassName: "field-error",
   },
 }}
 ```
 
-Class lain yang tersedia:
+Available field classes:
 
 ```text
 className
@@ -717,32 +779,113 @@ descriptionClassName
 errorClassName
 ```
 
----
+The rendered components also use internal class names such as:
 
-## TypeScript
-
-ErlForm dibuat dengan TypeScript dan menggunakan Zod sebagai sumber struktur form.
-
-```tsx
-const schema = z.object({
-  username: z.string(),
-  email: z.string().email(),
-});
+```text
+erlform-form
+erlform-grid
+erlform-field
+erlform-section
+erlform-array
+erlform-array-item
+erlform-error
 ```
 
-Schema tetap menjadi sumber utama untuk:
+The repository contains a demo stylesheet under:
 
-1. Struktur field.
-2. Tipe field dasar.
-3. Validasi.
+```text
+src/styles/index.css
+```
 
-Sedangkan `fieldConfig` digunakan untuk menambahkan konfigurasi UI dan behavior.
+That stylesheet is currently used by the development/demo application and is not automatically exported by the package build.
 
----
+## Public Exports
 
-## Struktur Konsep
+The package currently exports:
 
-Secara umum alur ErlForm:
+```ts
+ErlForm;
+Field;
+FieldRenderer;
+
+FieldConfig;
+FieldOptions;
+ResolvedFieldOptions;
+
+SectionConfig;
+SectionConfigs;
+```
+
+Example type import:
+
+```tsx
+import type { FieldConfig, FieldOptions, SectionConfig } from "erlangform";
+```
+
+## Development
+
+Clone the repository:
+
+```bash
+git clone https://github.com/erlanggaht/erlangform.git
+cd erlangform
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the demo application:
+
+```bash
+npm run dev
+```
+
+Build the npm library:
+
+```bash
+npm run build
+```
+
+Build the demo application:
+
+```bash
+npm run build:app
+```
+
+Run ESLint:
+
+```bash
+npm run lint
+```
+
+Preview the demo build:
+
+```bash
+npm run preview
+```
+
+## Project Structure
+
+```text
+src/
+├── components/
+│   ├── AutoForm.tsx
+│   ├── FieldRenderer.tsx
+│   ├── field/
+│   ├── field-array/
+│   ├── field-object/
+│   └── field-section/
+├── styles/
+├── types/
+├── utils/
+├── infer.ts
+└── index.ts
+```
+
+High-level flow:
 
 ```text
 Zod Schema
@@ -757,48 +900,23 @@ FieldRenderer
     └── FieldArray
          ↓
 TanStack Form
-         ↓
-Field State + Validation
 ```
 
-Conditional state:
+## Current Limitations
+
+ErlForm is still under active development.
+
+Current implementation limitations include:
+
+- Automatic inference is limited to string/email, number, boolean, object, and array schemas.
+- Nested field configuration is keyed by field name rather than full field path.
+- The built-in stylesheet is not currently exported from the npm package build.
+- Array items currently render an internal `Item N` header in addition to configurable item content labels.
+
+## Version
+
+Current repository package version:
 
 ```text
-form values
-    ↓
-resolveFieldState()
-    ↓
-visible / disabled / readOnly / required
+0.2.1
 ```
-
-Resolver configuration:
-
-```text
-fieldConfig
-    ↓
-resolveFieldConfig()
-    ↓
-label / placeholder / description / options
-```
-
----
-
-## Requirements
-
-- React 18 atau React 19
-- TanStack Form
-- Zod
-
-## Versi
-
-Versi saat ini:
-
-```text
-0.2.0
-```
-
-ErlForm masih dalam tahap pengembangan aktif.
-
-## Lisensi
-
-MIT

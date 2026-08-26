@@ -1,26 +1,27 @@
 import type { ComponentRegistry } from "@/types/component-registry";
 import type { FieldConfig } from "@/types/field-options";
+import type { FieldMeta } from "@/infer";
 import { FieldRenderer } from "../FieldRenderer";
 
-type ObjectFieldProps = {
+type ObjectFieldProps<TValues = Record<string, unknown>> = {
   form: any;
-  field: any;
+  field: FieldMeta;
   parentPath?: string;
-  fieldConfig?: FieldConfig;
-  fieldComponent?: ComponentRegistry;
+  fieldConfig?: FieldConfig<TValues>;
+  fieldComponent?: ComponentRegistry<TValues>;
 };
 
-export function ObjectField({
+export function ObjectField<TValues = Record<string, unknown>>({
   form,
   field,
   parentPath,
   fieldConfig,
   fieldComponent,
-}: ObjectFieldProps) {
+}: ObjectFieldProps<TValues>) {
   return (
     <div>
-      {field.fields?.map((child: any) => (
-        <FieldRenderer
+      {field.fields?.map((child) => (
+        <FieldRenderer<TValues>
           key={child.name}
           form={form}
           field={child}

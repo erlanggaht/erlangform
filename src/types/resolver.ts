@@ -1,1 +1,1 @@
-export type Resolver<T> = T | ((values: any) => T);
+export type Resolver<T, TValues = Record<string, unknown>> = T | ((values: TValues) => T);

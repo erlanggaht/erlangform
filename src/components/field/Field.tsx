@@ -7,26 +7,28 @@ import { FieldDescription } from "./FieldDesctription";
 import { FieldError } from "./FieldError";
 import { FieldLabel } from "./FieldLabel";
 
-type FieldProps = {
+type FieldProps<TValues = Record<string, unknown>, TValue = unknown> = {
   form: any;
   name: string;
   type: string;
-  config?: FieldOptions;
+  config?: FieldOptions<TValues, TValue>;
   state: FieldState;
-  fieldComponent?: ComponentRegistry;
+  fieldComponent?: ComponentRegistry<TValues>;
 };
 
-export function Field({ form, name, type, config, state, fieldComponent }: FieldProps) {
-  const resolvedConfig = resolveFieldConfig(config, form.state.values);
+export function Field<TValues = Record<string, unknown>, TValue = unknown>({
+  form,
+  name,
+  type,
+  config,
+  state,
+  fieldComponent,
+}: FieldProps<TValues, TValue>) {
+  const resolvedConfig = resolveFieldConfig(config, form.state.values as TValues);
 
   return (
     <form.Field name={name}>
       {(field: any) => {
-        console.log({
-          name,
-          value: field.state.value,
-          errors: field.state.meta.errors,
-        });
         if (type === "boolean") {
           return (
             <div className={`erlform-checkbox-field ${config?.wrapperClassName}`}>

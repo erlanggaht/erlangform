@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { FieldConfig } from "./types/field-options";
 
 export type FieldMeta = {
   name: string;
@@ -7,11 +6,9 @@ export type FieldMeta = {
 
   fields?: FieldMeta[];
   item?: FieldMeta;
-
-  config?: FieldConfig;
 };
 
-function inferField(name: string, field: any): FieldMeta {
+function inferField(name: string, field: z.ZodType): FieldMeta {
   if (field instanceof z.ZodString || field instanceof z.ZodEmail) {
     return {
       name,
@@ -45,7 +42,7 @@ function inferField(name: string, field: any): FieldMeta {
     return {
       name,
       type: "array",
-      item: inferField("item", field.element),
+      item: inferField("item", field.element as z.ZodType),
     };
   }
 
@@ -55,6 +52,6 @@ function inferField(name: string, field: any): FieldMeta {
   };
 }
 
-export function infer(schema: z.ZodObject) {
-  return Object.entries(schema.shape).map(([name, field]) => inferField(name, field));
+export function infer(schema: z.ZodObject): FieldMeta[] {
+  return Object.entries(schema.shape).map(([name, field]) => inferField(name, field as z.ZodType));
 }

@@ -1,28 +1,34 @@
-import type { FieldOptions } from "@/types/field-options";
+import type { FieldOptions, ResolvedFieldOptions } from "@/types/field-options";
 import type { Resolver } from "@/types/resolver";
 
-export function resolveValue<T>(value: Resolver<T> | undefined, values: any): T | undefined {
+export function resolveValue<T, TValues>(
+  value: Resolver<T, TValues> | undefined,
+  values: TValues,
+): T | undefined {
   if (value === undefined) {
     return undefined;
   }
 
   if (typeof value === "function") {
-    return (value as (values: any) => T)(values);
+    return (value as (values: TValues) => T)(values);
   }
 
   return value;
 }
 
-export function resolveFieldConfig(config: FieldOptions | undefined, values: any) {
+export function resolveFieldConfig<TValues, TValue>(
+  config: FieldOptions<TValues, TValue> | undefined,
+  values: TValues,
+): ResolvedFieldOptions<TValues, TValue> | undefined {
   if (!config) {
     return undefined;
   }
 
   return {
     ...config,
-    label: resolveValue(config.label, values),
-    placeholder: resolveValue(config.placeholder, values),
-    description: resolveValue(config.description, values),
+    label: resolveValue<string, TValues>(config.label, values),
+    placeholder: resolveValue<string, TValues>(config.placeholder, values),
+    description: resolveValue<string, TValues>(config.description, values),
     options: resolveValue(config.options, values),
   };
 }

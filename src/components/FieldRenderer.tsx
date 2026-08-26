@@ -1,5 +1,6 @@
 import type { ComponentRegistry } from "@/types/component-registry";
-import type { FieldConfig } from "@/types/field-options";
+import type { FieldMeta } from "@/infer";
+import type { FieldConfig, FieldOptions } from "@/types/field-options";
 import { getValueByPath, joinPath } from "@/utils/field-path";
 import { resolveFieldState } from "@/utils/resolve-field-state";
 import { useEffect } from "react";
@@ -7,14 +8,14 @@ import { FieldArray } from "./field-array";
 import { ObjectField } from "./field-object/FieldObject";
 import { Field } from "./field/Field";
 
-type FieldRendererProps = {
+type FieldRendererProps<TValues = Record<string, unknown>> = {
   form: any;
-  field: any;
-  values: any;
-  fieldConfig?: FieldConfig;
+  field: FieldMeta;
+  values: TValues;
+  fieldConfig?: FieldConfig<TValues>;
 
   parentPath?: string;
-  fieldComponent?: ComponentRegistry;
+  fieldComponent?: ComponentRegistry<TValues>;
 };
 
 function getEmptyValue(type: string) {
@@ -36,7 +37,11 @@ function getEmptyValue(type: string) {
   }
 }
 
-function getDefaultValue(field: any): any {
+function getDefaultValue(field: FieldMeta | undefined): unknown {
+  if (!field) {
+    return undefined;
+  }
+
   switch (field.type) {
     case "string":
       return "";
@@ -52,7 +57,7 @@ function getDefaultValue(field: any): any {
 
     case "object":
       return Object.fromEntries(
-        (field.fields ?? []).map((child: any) => [child.name, getDefaultValue(child)]),
+        (field.fields ?? []).map((child) => [child.name, getDefaultValue(child)]),
       );
 
     default:
@@ -60,17 +65,21 @@ function getDefaultValue(field: any): any {
   }
 }
 
-export function FieldRenderer({
+export function FieldRenderer<TValues = Record<string, unknown>>({
   form,
   field,
   values,
   fieldConfig,
   parentPath,
   fieldComponent,
-}: FieldRendererProps) {
+}: FieldRendererProps<TValues>) {
   const path = parentPath ? joinPath(parentPath, field.name) : field.name;
-  const config = fieldConfig?.[field.name];
-  const conditionValues = parentPath ? getValueByPath(values, parentPath) : values;
+  const config = (
+    fieldConfig as unknown as Record<string, FieldOptions<unknown, unknown> | undefined>
+  )?.[field.name];
+
+  const conditionValues = parentPath ? getValueByPath(form.state.values, parentPath) : values;
+
   const state = resolveFieldState(config, conditionValues);
   const layout = config?.layout;
 
@@ -88,29 +97,29 @@ export function FieldRenderer({
     if (field.type === "array") {
       const arrayConfig = config?.array;
 
+      if (!field.item) {
+        return null;
+      }
+
+      const itemField = field.item;
+
       return (
-        <FieldArray
+        <FieldArray<unknown>
           form={form}
           name={path}
           addLabel={arrayConfig?.addLabel}
           removeLabel={arrayConfig?.removeLabel}
-          createItem={() => getDefaultValue(field.item)}
+          itemLabel={
+            arrayConfig?.itemLabel as string | ((item: unknown, index: number) => string) | undefined
+          }
+          createItem={() => getDefaultValue(itemField)}
         >
-          {(_item: any, index: number) => {
-            const itemLabel =
-              typeof arrayConfig?.itemLabel === "function"
-                ? arrayConfig.itemLabel(_item, index)
-                : arrayConfig?.itemLabel
-                  ? `${arrayConfig.itemLabel} ${index + 1}`
-                  : `${field.name} ${index + 1}`;
-
+          {(_item, index) => {
             return (
               <div className="erlform-array-item-content">
-                <h4 className="erlform-array-item-title">{itemLabel}</h4>
-
-                <ObjectField
+                <ObjectField<TValues>
                   form={form}
-                  field={field.item}
+                  field={itemField}
                   parentPath={joinPath(path, index)}
                   fieldConfig={fieldConfig}
                   fieldComponent={fieldComponent}
@@ -124,7 +133,7 @@ export function FieldRenderer({
 
     if (field.type === "object") {
       return (
-        <ObjectField
+        <ObjectField<TValues>
           form={form}
           field={field}
           parentPath={path}
@@ -135,11 +144,11 @@ export function FieldRenderer({
     }
 
     return (
-      <Field
+      <Field<TValues>
         form={form}
         name={path}
         type={field.type}
-        config={config}
+        config={config as FieldOptions<TValues, unknown> | undefined}
         fieldComponent={fieldComponent}
         state={state}
       />

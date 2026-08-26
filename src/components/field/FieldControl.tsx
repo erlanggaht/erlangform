@@ -1,18 +1,30 @@
-import type { ComponentRegistry } from "@/types/component-registry";
+import type { ComponentRegistry, FieldComponentApi } from "@/types/component-registry";
 import type { ResolvedFieldOptions } from "@/types/field-options";
 import type { FieldState } from "@/utils/resolve-field-state";
-import { useEffect } from "react";
+import { useEffect, type ComponentType } from "react";
 
-type FieldControlProps = {
+type FieldControlProps<TValues = Record<string, unknown>, TValue = unknown> = {
   field: any;
   type: string;
-  config?: ResolvedFieldOptions;
-  fieldComponent?: ComponentRegistry;
+  config?: ResolvedFieldOptions<TValues, TValue>;
+  fieldComponent?: ComponentRegistry<TValues>;
   state: FieldState;
 };
 
-export function FieldControl({ field, type, config, state, fieldComponent }: FieldControlProps) {
-  const Custom = config?.component ?? fieldComponent?.[type as keyof ComponentRegistry];
+export function FieldControl<TValues = Record<string, unknown>, TValue = unknown>({
+  field,
+  type,
+  config,
+  state,
+  fieldComponent,
+}: FieldControlProps<TValues, TValue>) {
+  const registryComponent = fieldComponent?.[
+    type as keyof ComponentRegistry<TValues>
+  ] as ComponentType<{
+    field: FieldComponentApi<TValue>;
+    config?: ResolvedFieldOptions<TValues, TValue>;
+  }> | undefined;
+  const Custom = config?.component ?? registryComponent;
 
   useEffect(() => {
     if (!config?.options) {
@@ -32,7 +44,9 @@ export function FieldControl({ field, type, config, state, fieldComponent }: Fie
   }, [config?.options, field.state.value]);
 
   if (Custom) {
-    return <Custom field={field} config={config} />;
+    return (
+      <Custom field={field as FieldComponentApi<TValue>} config={config} />
+    );
   }
 
   switch (type) {

@@ -7,7 +7,10 @@ export type FieldState = {
   required: boolean;
 };
 
-export function resolveFieldState(config: FieldOptions | undefined, values: any): FieldState {
+export function resolveFieldState<TValues>(
+  config: FieldOptions<TValues> | undefined,
+  values: TValues,
+): FieldState {
   return {
     visible: config?.showIf ? config.showIf(values) : true,
     disabled: config?.disableIf ? config.disableIf(values) : false,

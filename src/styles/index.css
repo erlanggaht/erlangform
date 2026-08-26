@@ -65,6 +65,7 @@
   border: 1px solid #d9dee8;
   border-radius: 8px;
   background: #fff;
+  margin: 1rem 0;
 }
 
 .erlform-array-header {
@@ -84,6 +85,7 @@
   background: transparent;
   color: #dc2626;
   cursor: pointer;
+  margin-left: auto;
 }
 
 .erlform-array-add {

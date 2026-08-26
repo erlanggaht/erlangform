@@ -1,6 +1,6 @@
 {
   "name": "erlangform",
-  "version": "0.2.1",
+  "version": "0.4.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -19,6 +19,7 @@
     "dev": "vite",
     "build": "tsup",
     "build:app": "tsc -b && vite build",
+    "typecheck": "tsc -p tsconfig.types.json --noEmit",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -30,7 +31,6 @@
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-form": "^1.33.3",
     "clsx": "^2.1.1",
-    "erlangform": "^0.1.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwind-merge": "^3.6.0",

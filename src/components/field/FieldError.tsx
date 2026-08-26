@@ -1,8 +1,7 @@
-import type { ResolvedFieldOptions } from "@/types/field-options";
 import { normalizeError } from "@/utils/normalize-error";
 
 type FieldErrorProps = {
-  config?: ResolvedFieldOptions;
+  config?: { errorClassName?: string };
   errors?: unknown[];
 };
 

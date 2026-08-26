@@ -7,31 +7,31 @@ import { z } from "zod";
 import { FieldRenderer } from "./FieldRenderer";
 import { FieldSection } from "./field-section";
 
-type AutoFormProps = {
+export type AutoFormProps<TValues = Record<string, unknown>> = {
   form: any;
   schema: z.ZodObject;
-  fieldConfig?: FieldConfig;
-  fieldComponent?: ComponentRegistry;
+  fieldConfig?: FieldConfig<TValues>;
+  fieldComponent?: ComponentRegistry<TValues>;
   sectionConfig?: SectionConfigs;
 };
 
-export function AutoForm({
+export function AutoForm<TValues = Record<string, unknown>>({
   form,
   schema,
   fieldConfig,
   fieldComponent,
   sectionConfig,
-}: AutoFormProps) {
+}: AutoFormProps<TValues>) {
   const fields = infer(schema);
   const groups = groupFieldsBySection(fields, fieldConfig);
 
   return (
-    <form.Subscribe selector={(state: any) => state.values}>
-      {(values: any) => (
+    <form.Subscribe selector={(state: { values: TValues }) => state.values}>
+      {(values: TValues) => (
         <div className="erlform-form">
           {groups.map((group, index) => {
             const fieldsContent = group.fields.map((field) => (
-              <FieldRenderer
+              <FieldRenderer<TValues>
                 key={field.name}
                 form={form}
                 field={field}

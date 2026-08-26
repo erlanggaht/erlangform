@@ -1,7 +1,5 @@
-import type { ResolvedFieldOptions } from "@/types/field-options";
-
 type FieldDescriptionProps = {
-  config?: ResolvedFieldOptions;
+  config?: { descriptionClassName?: string };
   description?: string;
 };
 

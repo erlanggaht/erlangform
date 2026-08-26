@@ -1,8 +1,7 @@
-import type { ResolvedFieldOptions } from "@/types/field-options";
 import type { FieldState } from "@/utils/resolve-field-state";
 
 type FieldLabelProps = {
-  config?: ResolvedFieldOptions;
+  config?: { label?: string; labelClassName?: string };
   state: FieldState;
 };
 
