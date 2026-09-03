@@ -1,5 +1,5 @@
 import type { ComponentRegistry } from "@/types/component-registry";
-import type { FieldOptions } from "@/types/field-options";
+import type { InputFieldOptions } from "@/types/field-options";
 import { resolveFieldConfig } from "@/utils/resolve-field";
 import type { FieldState } from "@/utils/resolve-field-state";
 import { FieldControl } from "./FieldControl";
@@ -11,7 +11,7 @@ type FieldProps<TValues = Record<string, unknown>, TValue = unknown> = {
   form: any;
   name: string;
   type: string;
-  config?: FieldOptions<TValues, TValue>;
+  config?: InputFieldOptions<TValues, TValue>;
   state: FieldState;
   fieldComponent?: ComponentRegistry<TValues>;
 };

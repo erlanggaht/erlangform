@@ -1,6 +1,6 @@
 import type { AnyFieldApi } from "@tanstack/react-form";
 import type { ComponentType } from "react";
-import type { ResolvedFieldOptions } from "./field-options";
+import type { ResolvedInputFieldOptions } from "./field-options";
 
 export type FieldComponentApi<TValue = unknown> = Omit<AnyFieldApi, "state" | "handleChange"> & {
   state: Omit<AnyFieldApi["state"], "value"> & { value: TValue };
@@ -12,7 +12,7 @@ export type FieldComponentProps<
   TValues = Record<string, unknown>,
 > = {
   field: FieldComponentApi<TValue>;
-  config?: ResolvedFieldOptions<TValues, TValue>;
+  config?: ResolvedInputFieldOptions<TValues, TValue>;
 };
 
 export type ComponentRegistry<TValues = Record<string, unknown>> = {

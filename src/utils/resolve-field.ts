@@ -1,5 +1,6 @@
-import type { FieldOptions, ResolvedFieldOptions } from "@/types/field-options";
+import type { InputFieldOptions, ResolvedInputFieldOptions } from "@/types/field-options";
 import type { Resolver } from "@/types/resolver";
+import type { ReactNode } from "react";
 
 export function resolveValue<T, TValues>(
   value: Resolver<T, TValues> | undefined,
@@ -17,16 +18,16 @@ export function resolveValue<T, TValues>(
 }
 
 export function resolveFieldConfig<TValues, TValue>(
-  config: FieldOptions<TValues, TValue> | undefined,
+  config: InputFieldOptions<TValues, TValue> | undefined,
   values: TValues,
-): ResolvedFieldOptions<TValues, TValue> | undefined {
+): ResolvedInputFieldOptions<TValues, TValue> | undefined {
   if (!config) {
     return undefined;
   }
 
   return {
     ...config,
-    label: resolveValue<string, TValues>(config.label, values),
+    label: resolveValue<ReactNode, TValues>(config.label, values),
     placeholder: resolveValue<string, TValues>(config.placeholder, values),
     description: resolveValue<string, TValues>(config.description, values),
     options: resolveValue(config.options, values),

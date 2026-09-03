@@ -23,6 +23,11 @@ const schema = z.object({
   country: z.string(),
   city: z.string(),
 
+  socials: z.object({
+    facebook: z.string(),
+    instagram: z.string(),
+  }),
+
   // Seksi Contacts (Array Sederhana)
   contacts: z.array(
     z.object({
@@ -65,6 +70,10 @@ export default function App() {
       company: "",
       country: "id",
       city: "jakarta",
+      socials: {
+        facebook: "fb",
+        instagram: "ig",
+      },
       contacts: [
         {
           type: "x",
@@ -208,7 +217,7 @@ export default function App() {
                 },
                 Contacts: {
                   title: "5. Daftar Kontak",
-                  description: "Manajemen kontak bertipe personal atau perusahaan.",
+                  description: "Konfigurasi setiap field kini berada di dalam array contacts.",
                   collapsible: true,
                   defaultOpen: true,
                 },
@@ -310,9 +319,17 @@ export default function App() {
                     layout: { colSpan: 12, md: 6 },
                   },
 
+                  socials: {
+                    facebook: {
+                      label: "Facebook",
+                    },
+                    instagram: {
+                      label: "Instagram",
+                    },
+                  },
+
                   // --- SEKSI ARRAY: CONTACTS ---
                   contacts: {
-                    label: "Daftar Kontak",
                     section: "Contacts",
                     layout: { colSpan: 12 },
                     array: {
@@ -320,35 +337,34 @@ export default function App() {
                       addLabel: "+ Tambah Kontak Baru",
                       removeLabel: "Hapus Kontak",
                     },
-                  },
-                  type: {
-                    label: "Tipe Kontak",
-                    options: [
-                      { label: "Personal", value: "personal" },
-                      { label: "Perusahaan", value: "company" },
-                    ],
-                    layout: { colSpan: 12, md: 6 },
-                  },
-                  phone: {
-                    label: "Nomor Telepon",
-                    placeholder: "0812xxxxxxxx",
-                    layout: { colSpan: 12, md: 6 },
-                  },
-                  companyName: {
-                    label: "Nama PT/CV",
-                    placeholder: "PT Nama Kontak",
-                    showIf: (values) => values.type === "company",
-                    requiredIf: (values) => values.type === "company",
-                    clearOnHide: true,
-                    layout: { colSpan: 12 },
-                  },
-                  active: {
-                    label: "Status Aktif",
+                    type: {
+                      label: () => "Tipe Kontak",
+                      options: [
+                        { label: "Personal", value: "personal" },
+                        { label: "Perusahaan", value: "company" },
+                      ],
+                      layout: { colSpan: 12, md: 6 },
+                    },
+                    phone: {
+                      label: "Nomor Telepon",
+                      placeholder: "0812xxxxxxxx",
+                      layout: { colSpan: 12, md: 6 },
+                    },
+                    companyName: {
+                      label: "Nama PT/CV",
+                      placeholder: "PT Nama Kontak",
+                      showIf: (contact) => contact.type === "company",
+                      requiredIf: (contact) => contact.type === "company",
+                      clearOnHide: true,
+                      layout: { colSpan: 12 },
+                    },
+                    active: {
+                      label: "Status Aktif",
+                    },
                   },
 
                   // --- SEKSI NESTED ARRAY: COMPANIES ---
                   companies: {
-                    label: "Daftar Perusahaan",
                     section: "Companies",
                     layout: { colSpan: 12 },
                     array: {
@@ -356,6 +372,40 @@ export default function App() {
                         item.name ? item.name : `Perusahaan #${index + 1}`,
                       addLabel: "+ Tambah Perusahaan",
                       removeLabel: "Hapus Perusahaan",
+                    },
+                    name: {
+                      label: "Nama Perusahaan",
+                      placeholder: "PT Nama Perusahaan",
+                    },
+                    contacts: {
+                      array: {
+                        itemLabel: (_, index) => `Kontak perusahaan #${index + 1}`,
+                        addLabel: "+ Tambah Kontak Perusahaan",
+                        removeLabel: "Hapus Kontak",
+                      },
+                      type: {
+                        label: "Tipe Kontak",
+                        options: [
+                          { label: "Personal", value: "personal" },
+                          { label: "Perusahaan", value: "company" },
+                        ],
+                        layout: { colSpan: 12, md: 6 },
+                      },
+                      phone: {
+                        label: "Nomor Telepon",
+                        placeholder: "0812xxxxxxxx",
+                        layout: { colSpan: 12, md: 6 },
+                      },
+                      companyName: {
+                        label: "Nama PT/CV",
+                        placeholder: "PT Nama Kontak",
+                        showIf: (contact) => contact.type === "company",
+                        requiredIf: (contact) => contact.type === "company",
+                        clearOnHide: true,
+                      },
+                      active: {
+                        label: "Status Aktif",
+                      },
                     },
                   },
                 } as FieldConfig<z.infer<typeof schema>>

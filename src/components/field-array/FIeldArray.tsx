@@ -7,8 +7,7 @@ type FieldArrayProps<TItem = unknown> = {
   name: string;
   addLabel?: string;
   removeLabel?: string;
-  arrayLabel?: string;
-  itemLabel?: string | ((item: TItem, index: number) => string);
+  itemLabel?: ReactNode | ((item: TItem, index: number) => ReactNode);
   createItem?: () => TItem;
   children: (item: TItem, index: number) => ReactNode;
 };
@@ -43,7 +42,13 @@ export function FieldArray<TItem = unknown>({
       {items.map((item, index: number) => (
         <div key={index} className="erlform-array-item">
           <div className="erlform-array-header">
-            {itemLabel instanceof Function && <span>{itemLabel(item, index)}</span>}
+            <div className="erlform-array-item-title">
+              {typeof itemLabel === "function"
+                ? itemLabel(item, index)
+                : typeof itemLabel === "string"
+                  ? `${itemLabel} #${index + 1}`
+                  : itemLabel}
+            </div>
 
             <button type="button" onClick={() => remove(index)}>
               {removeLabel}

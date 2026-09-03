@@ -14,6 +14,7 @@ Versi ini menyelesaikan fondasi type-safety yang dimulai pada seri v0.3.x tanpa 
 - Callback field tingkat atas menerima root form values yang bertipe.
 - Callback field di dalam object atau array menerima contextual values yang sesuai.
 - `itemLabel(item, index)` menerima tipe item array sebenarnya, bukan `any`.
+- Konfigurasi field di dalam object atau array ditulis langsung di bawah parent-nya.
 - Dynamic resolver untuk label, placeholder, description, dan options bertipe end-to-end.
 - Custom field component memiliki `FieldComponentProps<TValue, TValues>` yang bertipe.
 - Component registry mendukung field string, number, dan boolean dengan value yang tepat.
@@ -34,9 +35,9 @@ const fieldConfig = {
     array: {
       itemLabel: (item, index) => `${index + 1}. ${item.phone}`,
     },
-  },
-  companyName: {
-    showIf: (item) => item.type === "company",
+    companyName: {
+      showIf: (item) => item.type === "company",
+    },
   },
 } satisfies FieldConfig<FormValues>;
 ```
@@ -191,7 +192,7 @@ Available configuration:
 
 | Option                 | Description                                          |
 | ---------------------- | ---------------------------------------------------- |
-| `label`                | Field label, static or dynamic                       |
+| `label`                | Input label, static/dynamic `ReactNode`              |
 | `type`                 | UI variant such as `text`, `password`, or `textarea` |
 | `placeholder`          | Input placeholder, static or dynamic                 |
 | `description`          | Field description, static or dynamic                 |
@@ -210,6 +211,10 @@ Available configuration:
 | `descriptionClassName` | Class for the description                            |
 | `errorClassName`       | Class for validation errors                          |
 | `array`                | Array-specific configuration                         |
+
+`label`, `placeholder`, `description`, input `type`, custom component, and input class
+props are only available to leaf input fields. Mereka sengaja tidak tersedia pada object
+atau array karena renderer tidak menggunakannya.
 
 ## Input Types
 
@@ -610,7 +615,7 @@ const form = useForm({
 });
 ```
 
-Configure array controls:
+Configure array controls and its item fields in one place:
 
 ```tsx
 fieldConfig={{
@@ -620,6 +625,16 @@ fieldConfig={{
       addLabel: "Add Contact",
       removeLabel: "Remove Contact",
     },
+    type: {
+      label: "Contact type",
+      options: [
+        { label: "Personal", value: "personal" },
+        { label: "Company", value: "company" },
+      ],
+    },
+    phone: {
+      label: "Phone number",
+    },
   },
 }}
 ```
@@ -628,7 +643,7 @@ When a new item is added, ErlForm creates a default value based on the inferred 
 
 ## Dynamic Array Labels
 
-`itemLabel` can be a function that receives the current item and index.
+`itemLabel` can be a string, `ReactNode`, or function that receives the current item and index.
 
 ```tsx
 fieldConfig={{
@@ -696,23 +711,65 @@ companies[0].contacts[0].phone
 
 Nested fields are recursively passed back through the same `FieldRenderer`.
 
-### Nested Field Configuration
+### Scoped Nested Field Configuration
 
-`fieldConfig` is currently resolved using the field's name rather than its complete nested path.
-
-For example:
+Put child settings directly on an object or array configuration to scope them to its direct children.
+The condition callbacks receive the immediate parent value, so the following `showIf`
+receives one contact rather than the whole form:
 
 ```tsx
 fieldConfig={{
-  phone: {
-    label: "Phone Number",
+  contacts: {
+    array: {
+      addLabel: "Add contact",
+    },
+    type: {
+      label: "Contact type",
+    },
+    companyName: {
+      label: "Company name",
+      showIf: (contact) => contact.type === "company",
+    },
   },
 }}
 ```
 
-will apply to nested fields named `phone`.
+This shape is recursive, including arrays nested inside array items:
 
-This also means fields with the same name in different nested objects currently share the same configuration.
+```tsx
+fieldConfig={{
+  companies: {
+    contacts: {
+      array: { addLabel: "Add company contact" },
+      phone: { label: "Company phone" },
+    },
+  },
+}}
+```
+
+Objects use the same direct shape:
+
+```tsx
+fieldConfig={{
+  company: {
+    city: { label: "City" },
+    address: { label: "Address" },
+  },
+}}
+```
+
+Input labels can render static or dynamic React content:
+
+```tsx
+label: (contact) => <span>Type for {contact.phone}</span>
+```
+
+The label renderer already supplies the wrapper for plain text. If returning custom
+markup, prefer a semantic child such as `span` or `strong`, not a nested `label` element.
+
+The previous flat form (`phone: { ... }`) remains supported as a compatibility
+fallback. Prefer the scoped direct form for new forms because same-named fields can
+have different settings in different branches of the schema.
 
 ## Validation
 
@@ -909,14 +966,13 @@ ErlForm is still under active development.
 Current implementation limitations include:
 
 - Automatic inference is limited to string/email, number, boolean, object, and array schemas.
-- Nested field configuration is keyed by field name rather than full field path.
+- Schema keys that collide with container options such as `array`, `layout`, or `section` should use the legacy flat configuration.
 - The built-in stylesheet is not currently exported from the npm package build.
-- Array items currently render an internal `Item N` header in addition to configurable item content labels.
 
 ## Version
 
 Current repository package version:
 
 ```text
-0.2.1
+0.4.1
 ```

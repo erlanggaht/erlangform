@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import type { FieldComponentProps } from "./component-registry";
 import type { FieldLayout } from "./layout";
 import type { Resolver } from "./resolver";
@@ -48,18 +48,40 @@ export type FieldValue<TValues, TKey extends PropertyKey> = NonNullish<TValues> 
 
 export type ArrayItem<T> = NonNullish<T> extends readonly (infer TItem)[] ? TItem : never;
 
-export type FieldOptions<TValues = Record<string, unknown>, TValue = unknown> = {
+type FieldChildren<TValue> = NonNullish<TValue> extends readonly (infer TItem)[]
+  ? TItem
+  : NonNullish<TValue> extends object
+    ? NonNullish<TValue>
+    : never;
+
+/**
+ * Configuration for the direct children of an object or an array item.
+ * Keys are scoped to their parent, so two nested `phone` fields can be
+ * configured independently.
+ */
+export type NestedFieldConfig<TValues> = NonNullish<TValues> extends object
+  ? {
+      [TKey in keyof NonNullish<TValues> & string]?: FieldOptions<
+        NonNullish<TValues>,
+        NonNullish<TValues>[TKey]
+      >;
+    }
+  : never;
+
+type VisibilityOptions<TValues> = {
+  clearOnHide?: boolean;
+  layout?: FieldLayout;
+  section?: string;
+  showIf?: (values: TValues) => boolean;
+};
+
+export type InputFieldOptions<TValues, TValue> = VisibilityOptions<TValues> & {
   type?: "text" | "password" | "textarea" | "number" | "checkbox";
 
-  clearOnHide?: boolean;
-
-  label?: Resolver<string, TValues>;
+  label?: Resolver<ReactNode, TValues>;
   placeholder?: Resolver<string, TValues>;
   description?: Resolver<string, TValues>;
   options?: Resolver<SelectOption[], TValues>;
-
-  layout?: FieldLayout;
-  section?: string;
 
   className?: string;
   wrapperClassName?: string;
@@ -68,33 +90,77 @@ export type FieldOptions<TValues = Record<string, unknown>, TValue = unknown> = 
   errorClassName?: string;
 
   component?: ComponentType<FieldComponentProps<TValue, TValues>>;
-
-  array?: {
-    itemLabel?: string | ((item: ArrayItem<TValue>, index: number) => string);
-    arrayLabel?: string;
-    addLabel?: string;
-    removeLabel?: string;
-  };
-
-  showIf?: (values: TValues) => boolean;
   disableIf?: (values: TValues) => boolean;
   readOnlyIf?: (values: TValues) => boolean;
   requiredIf?: (values: TValues) => boolean;
+};
+
+type ArrayFieldOptions<TValues, TValue> = VisibilityOptions<TValues> &
+  NestedFieldConfig<ArrayItem<TValue>> & {
+    array?: {
+      itemLabel?: ReactNode | ((item: ArrayItem<TValue>, index: number) => ReactNode);
+    addLabel?: string;
+    removeLabel?: string;
+  };
+};
+
+type ObjectFieldOptions<TValues, TValue> = VisibilityOptions<TValues> &
+  NestedFieldConfig<FieldChildren<TValue>>;
+
+/**
+ * Options available for a field, based on its inferred Zod value.
+ *
+ * Objects and arrays expose their child fields directly. Leaf fields expose
+ * input-specific options such as `label`, `placeholder`, and `options`.
+ */
+export type FieldOptions<TValues = Record<string, unknown>, TValue = unknown> =
+  NonNullish<TValue> extends readonly unknown[]
+    ? ArrayFieldOptions<TValues, TValue>
+    : NonNullish<TValue> extends object
+      ? ObjectFieldOptions<TValues, TValue>
+      : InputFieldOptions<TValues, TValue>;
+
+export type ResolvedInputFieldOptions<TValues = Record<string, unknown>, TValue = unknown> = Omit<
+  InputFieldOptions<TValues, TValue>,
+  "label" | "placeholder" | "description" | "options"
+> & {
+  label?: ReactNode;
+  placeholder?: string;
+  description?: string;
+  options?: SelectOption[];
 };
 
 export type ResolvedFieldOptions<TValues = Record<string, unknown>, TValue = unknown> = Omit<
   FieldOptions<TValues, TValue>,
   "label" | "placeholder" | "description" | "options"
 > & {
-  label?: string;
+  label?: ReactNode;
   placeholder?: string;
   description?: string;
   options?: SelectOption[];
 };
 
-export type FieldConfig<TValues = Record<string, unknown>> = {
-  [TKey in DeepFieldKeys<TValues>]?: FieldOptions<
+type RootFieldConfig<TValues> = NonNullish<TValues> extends object
+  ? {
+      [TKey in keyof NonNullish<TValues> & string]?: FieldOptions<
+        NonNullish<TValues>,
+        NonNullish<TValues>[TKey]
+      >;
+    }
+  : never;
+
+type LegacyNestedFieldConfig<TValues> = {
+  [TKey in Exclude<DeepFieldKeys<TValues>, keyof NonNullish<TValues> & string>]?: FieldOptions<
     FieldContext<TValues, TKey>,
     FieldValue<TValues, TKey>
   >;
 };
+
+/**
+ * Root field configuration. Put object and array children directly on their parent.
+ *
+ * Flat nested keys are retained for backwards compatibility and are used as a
+ * fallback when a scoped configuration is not present.
+ */
+export type FieldConfig<TValues = Record<string, unknown>> = RootFieldConfig<TValues> &
+  LegacyNestedFieldConfig<TValues>;

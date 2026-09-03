@@ -1,4 +1,5 @@
 import { infer } from "@/infer";
+import "@/styles/index.css";
 import type { ComponentRegistry } from "@/types/component-registry";
 import type { FieldConfig } from "@/types/field-options";
 import type { SectionConfigs } from "@/types/section-config";

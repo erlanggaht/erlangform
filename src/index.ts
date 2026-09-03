@@ -7,9 +7,12 @@ export type {
   DeepFieldKeys,
   FieldConfig,
   FieldContext,
+  InputFieldOptions,
   FieldOptions,
   FieldValue,
+  NestedFieldConfig,
   ResolvedFieldOptions,
+  ResolvedInputFieldOptions,
 } from "./types/field-options";
 export type {
   ComponentRegistry,

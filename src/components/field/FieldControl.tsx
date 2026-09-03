@@ -1,12 +1,12 @@
 import type { ComponentRegistry, FieldComponentApi } from "@/types/component-registry";
-import type { ResolvedFieldOptions } from "@/types/field-options";
+import type { ResolvedInputFieldOptions } from "@/types/field-options";
 import type { FieldState } from "@/utils/resolve-field-state";
 import { useEffect, type ComponentType } from "react";
 
 type FieldControlProps<TValues = Record<string, unknown>, TValue = unknown> = {
   field: any;
   type: string;
-  config?: ResolvedFieldOptions<TValues, TValue>;
+  config?: ResolvedInputFieldOptions<TValues, TValue>;
   fieldComponent?: ComponentRegistry<TValues>;
   state: FieldState;
 };
@@ -22,7 +22,7 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
     type as keyof ComponentRegistry<TValues>
   ] as ComponentType<{
     field: FieldComponentApi<TValue>;
-    config?: ResolvedFieldOptions<TValues, TValue>;
+    config?: ResolvedInputFieldOptions<TValues, TValue>;
   }> | undefined;
   const Custom = config?.component ?? registryComponent;
 

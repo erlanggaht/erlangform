@@ -7,7 +7,8 @@ type ObjectFieldProps<TValues = Record<string, unknown>> = {
   form: any;
   field: FieldMeta;
   parentPath?: string;
-  fieldConfig?: FieldConfig<TValues>;
+  fieldConfig?: unknown;
+  legacyFieldConfig?: FieldConfig<TValues>;
   fieldComponent?: ComponentRegistry<TValues>;
 };
 
@@ -16,10 +17,11 @@ export function ObjectField<TValues = Record<string, unknown>>({
   field,
   parentPath,
   fieldConfig,
+  legacyFieldConfig,
   fieldComponent,
 }: ObjectFieldProps<TValues>) {
   return (
-    <div>
+    <div className="erlform-grid">
       {field.fields?.map((child) => (
         <FieldRenderer<TValues>
           key={child.name}
@@ -28,6 +30,7 @@ export function ObjectField<TValues = Record<string, unknown>>({
           parentPath={parentPath}
           values={form.state.values}
           fieldConfig={fieldConfig}
+          legacyFieldConfig={legacyFieldConfig}
           fieldComponent={fieldComponent}
         />
       ))}

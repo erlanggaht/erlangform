@@ -1,9 +1,9 @@
 import type { ComponentRegistry } from "@/types/component-registry";
 import type { FieldMeta } from "@/infer";
-import type { FieldConfig, FieldOptions } from "@/types/field-options";
+import type { FieldConfig, FieldOptions, InputFieldOptions } from "@/types/field-options";
 import { getValueByPath, joinPath } from "@/utils/field-path";
 import { resolveFieldState } from "@/utils/resolve-field-state";
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { FieldArray } from "./field-array";
 import { ObjectField } from "./field-object/FieldObject";
 import { Field } from "./field/Field";
@@ -12,11 +12,27 @@ type FieldRendererProps<TValues = Record<string, unknown>> = {
   form: any;
   field: FieldMeta;
   values: TValues;
-  fieldConfig?: FieldConfig<TValues>;
+  fieldConfig?: unknown;
+  legacyFieldConfig?: FieldConfig<TValues>;
 
   parentPath?: string;
   fieldComponent?: ComponentRegistry<TValues>;
 };
+
+type FieldConfigScope = Record<string, FieldOptions<unknown, unknown> | undefined>;
+
+type ArrayConfig = {
+  itemLabel?: ReactNode | ((item: unknown, index: number) => ReactNode);
+  addLabel?: string;
+  removeLabel?: string;
+};
+
+function getFieldConfig(fieldConfig: unknown, legacyFieldConfig: unknown, name: string) {
+  const scopedConfig = fieldConfig as FieldConfigScope | undefined;
+  const legacyConfig = legacyFieldConfig as FieldConfigScope | undefined;
+
+  return scopedConfig?.[name] ?? legacyConfig?.[name];
+}
 
 function getEmptyValue(type: string) {
   switch (type) {
@@ -70,13 +86,15 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
   field,
   values,
   fieldConfig,
+  legacyFieldConfig,
   parentPath,
   fieldComponent,
 }: FieldRendererProps<TValues>) {
   const path = parentPath ? joinPath(parentPath, field.name) : field.name;
-  const config = (
-    fieldConfig as unknown as Record<string, FieldOptions<unknown, unknown> | undefined>
-  )?.[field.name];
+  const fallbackConfig = legacyFieldConfig ?? (fieldConfig as FieldConfig<TValues> | undefined);
+  const config = getFieldConfig(fieldConfig, fallbackConfig, field.name) as
+    | (FieldOptions<unknown, unknown> & { array?: ArrayConfig })
+    | undefined;
 
   const conditionValues = parentPath ? getValueByPath(form.state.values, parentPath) : values;
 
@@ -121,7 +139,8 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
                   form={form}
                   field={itemField}
                   parentPath={joinPath(path, index)}
-                  fieldConfig={fieldConfig}
+                  fieldConfig={config}
+                  legacyFieldConfig={fallbackConfig}
                   fieldComponent={fieldComponent}
                 />
               </div>
@@ -137,7 +156,8 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
           form={form}
           field={field}
           parentPath={path}
-          fieldConfig={fieldConfig}
+          fieldConfig={config}
+          legacyFieldConfig={fallbackConfig}
           fieldComponent={fieldComponent}
         />
       );
@@ -148,7 +168,7 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
         form={form}
         name={path}
         type={field.type}
-        config={config as FieldOptions<TValues, unknown> | undefined}
+        config={config as InputFieldOptions<TValues, unknown> | undefined}
         fieldComponent={fieldComponent}
         state={state}
       />
