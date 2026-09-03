@@ -187,7 +187,7 @@ export default function App() {
                 Perubahan dan validasi berjalan saat Anda mengisi form.
               </p>
             </div>
-            <ErlForm
+            <ErlForm<z.infer<typeof schema>>
               form={form}
               schema={schema}
               sectionConfig={{
@@ -482,7 +482,7 @@ export default function App() {
                   <p className="mt-2 text-sm font-medium text-blue-700" role="status">
                     Data valid.
                   </p>
-                  <pre className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-4 text-xs leading-5 text-slate-200">
+                  <pre className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap wrap-break-word rounded-lg bg-slate-950 p-4 text-xs leading-5 text-slate-200">
                     {JSON.stringify(submittedData, null, 2)}
                   </pre>
                 </>
