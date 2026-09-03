@@ -74,6 +74,9 @@ const fieldConfig = {
 npm install erlangform
 ```
 
+`ErlForm` automatically injects its bundled stylesheet when the component is
+imported. No additional CSS import is required.
+
 ErlForm is built around:
 
 - React
