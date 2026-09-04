@@ -31,6 +31,7 @@
     "type": "git",
     "url": "https://github.com/erlanggaht/erlangform"
   },
+  "homepage": "https://erlangform.erlanggaht.com/docs",
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-form": "^1.33.3",
