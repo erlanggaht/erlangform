@@ -11,6 +11,10 @@ type FieldControlProps<TValues = Record<string, unknown>, TValue = unknown> = {
   state: FieldState;
 };
 
+function nativeClassName(className?: string) {
+  return `erlform-native-control${className ? ` ${className}` : ""}`;
+}
+
 export function FieldControl<TValues = Record<string, unknown>, TValue = unknown>({
   field,
   type,
@@ -18,13 +22,19 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
   state,
   fieldComponent,
 }: FieldControlProps<TValues, TValue>) {
+  const registryKey = config?.options ? "select" : type;
   const registryComponent = fieldComponent?.[
-    type as keyof ComponentRegistry<TValues>
+    registryKey as keyof ComponentRegistry<TValues>
   ] as ComponentType<{
     field: FieldComponentApi<TValue>;
     config?: ResolvedInputFieldOptions<TValues, TValue>;
+    state?: FieldState;
   }> | undefined;
-  const Custom = config?.component ?? registryComponent;
+  const stringFallback = fieldComponent?.string as unknown as typeof registryComponent;
+  const Custom =
+    config?.component ??
+    registryComponent ??
+    (config?.options ? stringFallback : undefined);
 
   useEffect(() => {
     if (!config?.options) {
@@ -45,7 +55,7 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
 
   if (Custom) {
     return (
-      <Custom field={field as FieldComponentApi<TValue>} config={config} />
+      <Custom field={field as FieldComponentApi<TValue>} config={config} state={state} />
     );
   }
 
@@ -54,11 +64,17 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
       if (config?.options) {
         return (
           <select
+            id={field.name}
             value={field.state.value ?? ""}
             required={state.required}
             disabled={state.disabled}
-            className={config?.className}
-            onChange={(e) => field.handleChange(e.target.value)}
+            aria-readonly={state.readOnly || undefined}
+            className={nativeClassName(
+              config?.className ? `${config.className} erlform-native-select` : "erlform-native-select",
+            )}
+            onChange={
+              state.readOnly ? undefined : (e) => field.handleChange(e.target.value)
+            }
           >
             {config.options.map((option) => (
               <option key={option.value} value={option.value}>
@@ -72,12 +88,15 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
       if (config?.type === "textarea") {
         return (
           <textarea
+            id={field.name}
             value={field.state.value ?? ""}
             placeholder={config.placeholder}
             required={state.required}
             disabled={state.disabled}
             readOnly={state.readOnly}
-            className={config?.className}
+            className={nativeClassName(
+              config?.className ? `${config.className} erlform-native-textarea` : "erlform-native-textarea",
+            )}
             onChange={(e) => field.handleChange(e.target.value)}
           />
         );
@@ -86,13 +105,14 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
       return (
         <div>
           <input
+            id={field.name}
             type={config?.type === "password" ? "password" : "text"}
             value={field.state.value ?? ""}
             placeholder={config?.placeholder}
             required={state.required}
             disabled={state.disabled}
             readOnly={state.readOnly}
-            className={config?.className}
+            className={nativeClassName(config?.className)}
             onChange={(e) => field.handleChange(e.target.value)}
           />
         </div>
@@ -102,26 +122,31 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
     case "number":
       return (
         <input
+          id={field.name}
           type="number"
           value={field.state.value ?? ""}
           placeholder={config?.placeholder}
           required={state.required}
           disabled={state.disabled}
           readOnly={state.readOnly}
-          className={config?.className}
-          onChange={(e) => field.handleChange(Number(e.target.value))}
+          className={nativeClassName(config?.className)}
+          onChange={(e) => {
+            const value = e.target.value;
+            field.handleChange(value === "" ? undefined : Number(value));
+          }}
         />
       );
 
     case "boolean":
       return (
         <input
+          id={field.name}
           type="checkbox"
           checked={field.state.value ?? false}
           required={state.required}
           disabled={state.disabled}
           readOnly={state.readOnly}
-          className={config?.className}
+          className={nativeClassName(config?.className)}
           onChange={(e) => field.handleChange(e.target.checked)}
         />
       );

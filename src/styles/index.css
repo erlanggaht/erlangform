@@ -119,9 +119,7 @@
   font-weight: 500;
 }
 
-.erlform-field input,
-.erlform-field select,
-.erlform-field textarea {
+.erlform-field .erlform-native-control {
   width: 100%;
   box-sizing: border-box;
   padding: 8px 10px;
@@ -136,36 +134,31 @@
     box-shadow 0.15s ease;
 }
 
-.erlform-field input:focus,
-.erlform-field select:focus,
-.erlform-field textarea:focus {
+.erlform-field .erlform-native-control:focus {
   border-color: #6366f1;
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
 }
 
-.erlform-field input::placeholder,
-.erlform-field textarea::placeholder {
+.erlform-field .erlform-native-control::placeholder {
   color: #9ca3af;
 }
 
-.erlform-field textarea {
+.erlform-field .erlform-native-control.erlform-native-textarea {
   min-height: 100px;
   resize: vertical;
 }
 
-.erlform-field select {
+.erlform-field .erlform-native-control.erlform-native-select {
   cursor: pointer;
 }
 
-.erlform-field input:disabled,
-.erlform-field select:disabled,
-.erlform-field textarea:disabled {
+.erlform-field .erlform-native-control:disabled {
   background: #f3f4f6;
   color: #9ca3af;
   cursor: not-allowed;
 }
 
-.erlform-field input[type="checkbox"] {
+.erlform-field .erlform-native-control[type="checkbox"] {
   width: 16px;
   height: 16px;
   padding: 0;

@@ -4,17 +4,23 @@ import type { ReactNode } from "react";
 type FieldLabelProps = {
   config?: { label?: ReactNode; labelClassName?: string };
   state: FieldState;
+  htmlFor?: string;
 };
 
-export function FieldLabel({ config, state }: FieldLabelProps) {
+export function FieldLabel({ config, state, htmlFor }: FieldLabelProps) {
   const requiredMark = state.required && <span style={{ color: "red" }}> *</span>;
 
   if (typeof config?.label !== "string") {
-    return <div className={config?.labelClassName}>{config?.label ?? ""}{requiredMark}</div>;
+    return (
+      <label htmlFor={htmlFor} className={config?.labelClassName}>
+        {config?.label ?? ""}
+        {requiredMark}
+      </label>
+    );
   }
 
   return (
-    <label className={config?.labelClassName}>
+    <label htmlFor={htmlFor} className={config?.labelClassName}>
       {config.label}
       {requiredMark}
     </label>

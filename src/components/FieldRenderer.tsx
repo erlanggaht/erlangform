@@ -96,16 +96,24 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
     | (FieldOptions<unknown, unknown> & { array?: ArrayConfig })
     | undefined;
 
+  const effectiveConfig =
+    field.options && !config?.options
+      ? {
+          ...config,
+          options: field.options.map((value) => ({ label: value, value })),
+        }
+      : config;
+
   const conditionValues = parentPath ? getValueByPath(form.state.values, parentPath) : values;
 
-  const state = resolveFieldState(config, conditionValues);
-  const layout = config?.layout;
+  const state = resolveFieldState(effectiveConfig, conditionValues);
+  const layout = effectiveConfig?.layout;
 
   useEffect(() => {
-    if (!state.visible && config?.clearOnHide) {
+    if (!state.visible && effectiveConfig?.clearOnHide) {
       form.setFieldValue(path, getEmptyValue(field.type));
     }
-  }, [state.visible, config?.clearOnHide, form, path, field.type]);
+  }, [state.visible, effectiveConfig?.clearOnHide, form, path, field.type]);
 
   if (!state.visible) {
     return null;
@@ -168,7 +176,7 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
         form={form}
         name={path}
         type={field.type}
-        config={config as InputFieldOptions<TValues, unknown> | undefined}
+        config={effectiveConfig as InputFieldOptions<TValues, unknown> | undefined}
         fieldComponent={fieldComponent}
         state={state}
       />

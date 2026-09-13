@@ -1,5 +1,6 @@
 import { infer } from "@/infer";
 import "@/styles/index.css";
+import type { ReactFormExtendedApi } from "@tanstack/react-form";
 import type { ComponentRegistry } from "@/types/component-registry";
 import type { FieldConfig } from "@/types/field-options";
 import type { SectionConfigs } from "@/types/section-config";
@@ -9,7 +10,20 @@ import { FieldRenderer } from "./FieldRenderer";
 import { FieldSection } from "./field-section";
 
 export type AutoFormProps<TValues = Record<string, unknown>> = {
-  form: any;
+  form: ReactFormExtendedApi<
+    TValues,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any
+  >;
   schema: z.ZodObject;
   fieldConfig?: FieldConfig<TValues>;
   fieldComponent?: ComponentRegistry<TValues>;
