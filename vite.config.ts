@@ -9,7 +9,7 @@ export default defineConfig({
   base: process.env.VITE_BASE_PATH || "/",
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
 });

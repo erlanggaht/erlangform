@@ -15,6 +15,15 @@ function nativeClassName(className?: string) {
   return `erlform-native-control${className ? ` ${className}` : ""}`;
 }
 
+function formatDateValue(value: unknown, type: "date" | "datetime-local") {
+  if (!(value instanceof Date)) {
+    return typeof value === "string" ? value : "";
+  }
+
+  const iso = value.toISOString();
+  return type === "date" ? iso.slice(0, 10) : iso.slice(0, 16);
+}
+
 export function FieldControl<TValues = Record<string, unknown>, TValue = unknown>({
   field,
   type,
@@ -22,6 +31,18 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
   state,
   fieldComponent,
 }: FieldControlProps<TValues, TValue>) {
+  const hasErrors = field.state.meta.errors?.length > 0;
+  const hasDescription = Boolean(config?.description);
+  const accessibilityProps = {
+    "aria-invalid": hasErrors || undefined,
+    "aria-describedby": [
+      hasDescription ? `${field.name}-description` : undefined,
+      hasErrors ? `${field.name}-error` : undefined,
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined,
+    "aria-required": state.required || undefined,
+  };
   const registryKey = config?.options ? "select" : type;
   const registryComponent = fieldComponent?.[
     registryKey as keyof ComponentRegistry<TValues>
@@ -60,7 +81,30 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
   }
 
   switch (type) {
-    case "string": {
+    case "string":
+    case "email":
+    case "url": {
+      if (config?.type === "radio" && config.options) {
+        return (
+          <div role="radiogroup" aria-invalid={accessibilityProps["aria-invalid"]}>
+            {config.options.map((option) => (
+              <label key={option.value} className="erlform-radio-option">
+                <input
+                  type="radio"
+                  name={field.name}
+                  value={option.value}
+                  checked={field.state.value === option.value}
+                  required={state.required}
+                  disabled={state.disabled}
+                  onChange={() => field.handleChange(option.value)}
+                />
+                <span>{option.label}</span>
+              </label>
+            ))}
+          </div>
+        );
+      }
+
       if (config?.options) {
         return (
           <select
@@ -72,6 +116,7 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
             className={nativeClassName(
               config?.className ? `${config.className} erlform-native-select` : "erlform-native-select",
             )}
+            {...accessibilityProps}
             onChange={
               state.readOnly ? undefined : (e) => field.handleChange(e.target.value)
             }
@@ -97,6 +142,7 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
             className={nativeClassName(
               config?.className ? `${config.className} erlform-native-textarea` : "erlform-native-textarea",
             )}
+            {...accessibilityProps}
             onChange={(e) => field.handleChange(e.target.value)}
           />
         );
@@ -106,13 +152,27 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
         <div>
           <input
             id={field.name}
-            type={config?.type === "password" ? "password" : "text"}
+            type={
+              config?.type === "password"
+                ? "password"
+                : config?.type === "range" || config?.type === "color"
+                  ? config.type
+                  : type === "email" || type === "url"
+                    ? type
+                    : "text"
+            }
             value={field.state.value ?? ""}
             placeholder={config?.placeholder}
+            min={config?.min}
+            max={config?.max}
+            step={config?.step}
+            accept={config?.accept}
+            multiple={config?.multiple}
             required={state.required}
             disabled={state.disabled}
             readOnly={state.readOnly}
             className={nativeClassName(config?.className)}
+            {...accessibilityProps}
             onChange={(e) => field.handleChange(e.target.value)}
           />
         </div>
@@ -126,14 +186,69 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
           type="number"
           value={field.state.value ?? ""}
           placeholder={config?.placeholder}
+          min={config?.min}
+          max={config?.max}
+          step={config?.step}
           required={state.required}
           disabled={state.disabled}
           readOnly={state.readOnly}
           className={nativeClassName(config?.className)}
+          {...accessibilityProps}
           onChange={(e) => {
             const value = e.target.value;
             field.handleChange(value === "" ? undefined : Number(value));
           }}
+        />
+      );
+
+    case "date":
+    case "time":
+    case "datetime": {
+      const inputType = type === "datetime" ? "datetime-local" : type;
+
+      return (
+        <input
+          id={field.name}
+          type={inputType}
+          value={field.state.value ?? ""}
+          placeholder={config?.placeholder}
+          required={state.required}
+          disabled={state.disabled}
+          readOnly={state.readOnly}
+          className={nativeClassName(config?.className)}
+          {...accessibilityProps}
+          onChange={(event) => field.handleChange(event.target.value)}
+        />
+      );
+    }
+
+    case "date-object":
+      return (
+        <input
+          id={field.name}
+          type="date"
+          value={formatDateValue(field.state.value, "date")}
+          required={state.required}
+          disabled={state.disabled}
+          readOnly={state.readOnly}
+          className={nativeClassName(config?.className)}
+          {...accessibilityProps}
+          onChange={(event) =>
+            field.handleChange(event.target.value ? new Date(`${event.target.value}T00:00:00`) : undefined)
+          }
+        />
+      );
+
+    case "file":
+      return (
+        <input
+          id={field.name}
+          type="file"
+          required={state.required}
+          disabled={state.disabled}
+          className={nativeClassName(config?.className)}
+          {...accessibilityProps}
+          onChange={(event) => field.handleChange(event.target.files?.[0])}
         />
       );
 
@@ -147,6 +262,7 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
           disabled={state.disabled}
           readOnly={state.readOnly}
           className={nativeClassName(config?.className)}
+          {...accessibilityProps}
           onChange={(e) => field.handleChange(e.target.checked)}
         />
       );

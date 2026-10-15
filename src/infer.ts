@@ -2,10 +2,30 @@ import { z } from "zod";
 
 export type FieldMeta = {
   name: string;
-  type: "string" | "number" | "boolean" | "array" | "object" | "unknown";
+  type:
+    | "string"
+    | "email"
+    | "url"
+    | "date"
+    | "date-object"
+    | "time"
+    | "datetime"
+    | "file"
+    | "number"
+    | "boolean"
+    | "array"
+    | "tuple"
+    | "object"
+    | "record"
+    | "union"
+    | "unknown";
 
   fields?: FieldMeta[];
   item?: FieldMeta;
+  variants?: FieldMeta[];
+  discriminator?: string;
+  variantKeys?: string[];
+  items?: FieldMeta[];
   options?: string[];
 };
 
@@ -28,12 +48,44 @@ function unwrapField(field: z.ZodType): z.ZodType {
     return unwrapField(current._def.in as z.ZodType);
   }
 
+  if (current instanceof z.ZodLazy) {
+    return unwrapField(current._def.getter() as z.ZodType);
+  }
+
   return current;
 }
 
 function inferField(name: string, inputField: z.ZodType): FieldMeta {
   const field = unwrapField(inputField);
-  if (field instanceof z.ZodString || field instanceof z.ZodEmail) {
+  if (field instanceof z.ZodEmail) {
+    return { name, type: "email" };
+  }
+
+  if (field instanceof z.ZodURL) {
+    return { name, type: "url" };
+  }
+
+  if (field instanceof z.ZodISODate) {
+    return { name, type: "date" };
+  }
+
+  if (field instanceof z.ZodISOTime) {
+    return { name, type: "time" };
+  }
+
+  if (field instanceof z.ZodISODateTime) {
+    return { name, type: "datetime" };
+  }
+
+  if (field instanceof z.ZodDate) {
+    return { name, type: "date-object" };
+  }
+
+  if (field instanceof z.ZodFile) {
+    return { name, type: "file" };
+  }
+
+  if (field instanceof z.ZodString) {
     return {
       name,
       type: "string",
@@ -69,9 +121,89 @@ function inferField(name: string, inputField: z.ZodType): FieldMeta {
   if (field instanceof z.ZodLiteral) {
     const value = field.value;
 
-    if (typeof value === "string") return { name, type: "string" };
+    if (typeof value === "string") return { name, type: "string", options: [value] };
     if (typeof value === "number") return { name, type: "number" };
     if (typeof value === "boolean") return { name, type: "boolean" };
+  }
+
+  if (field instanceof z.ZodDiscriminatedUnion) {
+    const definition = field._def as unknown as {
+      discriminator: string;
+      options: z.ZodType[];
+    };
+    const variantSchemas = definition.options;
+    const variantKeys = variantSchemas.map((option) => {
+      if (option instanceof z.ZodObject) {
+        const discriminatorField = (option.shape as Record<string, z.ZodType>)[
+          definition.discriminator
+        ];
+
+        if (discriminatorField instanceof z.ZodLiteral) {
+          return String(discriminatorField.value);
+        }
+      }
+
+      return "";
+    });
+    const variants = variantSchemas.map((option, index) =>
+      inferField(`${name}-${index}`, option),
+    );
+
+    return {
+      name,
+      type: "union",
+      variants,
+      discriminator: definition.discriminator,
+      variantKeys,
+    };
+  }
+
+  if (field instanceof z.ZodUnion) {
+    const variants = (field.options as unknown as z.ZodType[]).map((option, index) =>
+      inferField(`${name}-${index}`, option),
+    );
+    const first = variants[0];
+
+    if (first && variants.every((variant) => variant.type === first.type)) {
+      const options = variants
+        .flatMap((variant) => variant.options ?? [])
+        .filter((value, index, all) => all.indexOf(value) === index);
+
+      return {
+        ...first,
+        name,
+        ...(options.length ? { options } : {}),
+      };
+    }
+
+    return { name, type: "unknown", variants };
+  }
+
+  if (field instanceof z.ZodTuple) {
+    const items = (field._def.items as unknown as z.ZodType[]).map((item, index) =>
+      inferField(`${name}-${index}`, item),
+    );
+
+    return { name, type: "tuple", items };
+  }
+
+  if (field instanceof z.ZodIntersection) {
+    const left = inferField(`${name}-left`, field._def.left as z.ZodType);
+    const right = inferField(`${name}-right`, field._def.right as z.ZodType);
+
+    if (left.type === "object" && right.type === "object") {
+      return {
+        name,
+        type: "object",
+        fields: [...(left.fields ?? []), ...(right.fields ?? [])],
+      };
+    }
+
+    if (left.type === right.type) {
+      return { ...left, name };
+    }
+
+    return { name, type: "unknown", variants: [left, right] };
   }
 
   if (field instanceof z.ZodObject) {
@@ -79,6 +211,14 @@ function inferField(name: string, inputField: z.ZodType): FieldMeta {
       name,
       type: "object",
       fields: infer(field),
+    };
+  }
+
+  if (field instanceof z.ZodRecord) {
+    return {
+      name,
+      type: "record",
+      item: inferField("value", field._def.valueType as z.ZodType),
     };
   }
 

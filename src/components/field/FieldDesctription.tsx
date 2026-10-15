@@ -1,12 +1,17 @@
 type FieldDescriptionProps = {
   config?: { descriptionClassName?: string };
   description?: string;
+  id?: string;
 };
 
-export function FieldDescription({ config, description }: FieldDescriptionProps) {
+export function FieldDescription({ config, description, id }: FieldDescriptionProps) {
   if (!description) {
     return null;
   }
 
-  return <small className={config?.descriptionClassName}>{description}</small>;
+  return (
+    <small id={id} className={config?.descriptionClassName}>
+      {description}
+    </small>
+  );
 }

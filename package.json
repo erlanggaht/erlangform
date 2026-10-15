@@ -19,12 +19,19 @@
     "dist",
     "README.md"
   ],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsup",
     "build:app": "tsc -b && vite build",
     "typecheck": "tsc -p tsconfig.types.json --noEmit",
     "lint": "eslint .",
+    "test:runtime": "node --test tests/runtime/infer.test.mjs tests/runtime/accessibility.test.mjs",
+    "test": "pnpm typecheck && pnpm build && pnpm test:runtime",
+    "check": "pnpm typecheck && pnpm lint && pnpm build && pnpm test:runtime",
+    "prepublishOnly": "pnpm check",
     "preview": "vite preview"
   },
   "repository": {
@@ -32,6 +39,9 @@
     "url": "https://github.com/erlanggaht/erlangform"
   },
   "homepage": "https://erlangform.erlanggaht.com/docs",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-form": "^1.33.3",

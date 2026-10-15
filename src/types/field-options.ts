@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
-import type { FieldComponentProps } from "./component-registry";
+import type { ContainerComponentProps, FieldComponentProps } from "./component-registry";
 import type { FieldLayout } from "./layout";
 import type { Resolver } from "./resolver";
 import type { SelectOption } from "./select-options";
@@ -8,12 +8,16 @@ type NonNullish<T> = Exclude<T, null | undefined>;
 
 export type DeepFieldKeys<T> = NonNullish<T> extends readonly (infer TItem)[]
   ? DeepFieldKeys<TItem>
+  : NonNullish<T> extends Date | File
+    ? never
   : NonNullish<T> extends object
-    ? {
-        [TKey in keyof NonNullish<T> & string]-?:
-          | TKey
-          | DeepFieldKeys<NonNullish<T>[TKey]>;
-      }[keyof NonNullish<T> & string]
+    ? string extends keyof NonNullish<T>
+      ? never
+      : {
+          [TKey in keyof NonNullish<T> & string]-?:
+            | TKey
+            | DeepFieldKeys<NonNullish<T>[TKey]>;
+        }[keyof NonNullish<T> & string]
     : never;
 
 export type FieldContext<TValues, TKey extends PropertyKey> = NonNullish<TValues> extends readonly (
@@ -66,7 +70,7 @@ export type NestedFieldConfig<TValues> = NonNullish<TValues> extends object
         NonNullish<TValues>[TKey]
       >;
     }
-  : never;
+  : unknown;
 
 type VisibilityOptions<TValues> = {
   clearOnHide?: boolean;
@@ -76,12 +80,31 @@ type VisibilityOptions<TValues> = {
 };
 
 export type InputFieldOptions<TValues, TValue> = VisibilityOptions<TValues> & {
-  type?: "text" | "password" | "textarea" | "number" | "checkbox";
+  type?:
+    | "text"
+    | "password"
+    | "textarea"
+    | "number"
+    | "checkbox"
+    | "radio"
+    | "email"
+    | "url"
+    | "date"
+    | "time"
+    | "datetime-local"
+    | "file"
+    | "range"
+    | "color";
 
   label?: Resolver<ReactNode, TValues>;
   placeholder?: Resolver<string, TValues>;
   description?: Resolver<string, TValues>;
   options?: Resolver<SelectOption[], TValues>;
+  min?: number | string;
+  max?: number | string;
+  step?: number | "any";
+  accept?: string;
+  multiple?: boolean;
 
   className?: string;
   wrapperClassName?: string;
@@ -97,15 +120,30 @@ export type InputFieldOptions<TValues, TValue> = VisibilityOptions<TValues> & {
 
 type ArrayFieldOptions<TValues, TValue> = VisibilityOptions<TValues> &
   NestedFieldConfig<ArrayItem<TValue>> & {
+    inputType?: "checkbox-group";
+    options?: Resolver<SelectOption[], TValues>;
+    component?: ComponentType<ContainerComponentProps<NonNullish<TValue>, TValues>>;
     array?: {
       itemLabel?: ReactNode | ((item: ArrayItem<TValue>, index: number) => ReactNode);
-    addLabel?: string;
-    removeLabel?: string;
+      addLabel?: string;
+      removeLabel?: string;
+      duplicateLabel?: string;
+      moveUpLabel?: string;
+      moveDownLabel?: string;
+      emptyLabel?: string;
+      minItems?: number;
+      maxItems?: number;
+      reorderable?: boolean;
+    };
   };
-};
-
 type ObjectFieldOptions<TValues, TValue> = VisibilityOptions<TValues> &
-  NestedFieldConfig<FieldChildren<TValue>>;
+  NestedFieldConfig<FieldChildren<TValue>> & {
+    component?: ComponentType<ContainerComponentProps<NonNullish<TValue>, TValues>>;
+  };
+
+type RecordFieldOptions<TValues, TValue> = VisibilityOptions<TValues> & {
+  component?: ComponentType<ContainerComponentProps<NonNullish<TValue>, TValues>>;
+};
 
 /**
  * Options available for a field, based on its inferred Zod value.
@@ -114,8 +152,12 @@ type ObjectFieldOptions<TValues, TValue> = VisibilityOptions<TValues> &
  * input-specific options such as `label`, `placeholder`, and `options`.
  */
 export type FieldOptions<TValues = Record<string, unknown>, TValue = unknown> =
-  NonNullish<TValue> extends readonly unknown[]
+  NonNullish<TValue> extends Date | File
+    ? InputFieldOptions<TValues, TValue>
+    : NonNullish<TValue> extends readonly unknown[]
     ? ArrayFieldOptions<TValues, TValue>
+    : string extends keyof NonNullish<TValue>
+      ? RecordFieldOptions<TValues, TValue>
     : NonNullish<TValue> extends object
       ? ObjectFieldOptions<TValues, TValue>
       : InputFieldOptions<TValues, TValue>;

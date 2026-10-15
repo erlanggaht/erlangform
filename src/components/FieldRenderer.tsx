@@ -2,10 +2,15 @@ import type { ComponentRegistry } from "@/types/component-registry";
 import type { FieldMeta } from "@/infer";
 import type { FieldConfig, FieldOptions, InputFieldOptions } from "@/types/field-options";
 import { getValueByPath, joinPath } from "@/utils/field-path";
+import { resolveValue } from "@/utils/resolve-field";
 import { resolveFieldState } from "@/utils/resolve-field-state";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import { FieldArray } from "./field-array";
+import { CheckboxGroup } from "./field-array/CheckboxGroup";
+import { TupleField } from "./field-array/TupleField";
 import { ObjectField } from "./field-object/FieldObject";
+import { RecordField } from "./field-object/RecordField";
+import { DiscriminatedUnionField } from "./field-object/DiscriminatedUnionField";
 import { Field } from "./field/Field";
 
 type FieldRendererProps<TValues = Record<string, unknown>> = {
@@ -22,9 +27,17 @@ type FieldRendererProps<TValues = Record<string, unknown>> = {
 type FieldConfigScope = Record<string, FieldOptions<unknown, unknown> | undefined>;
 
 type ArrayConfig = {
+  inputType?: "checkbox-group";
   itemLabel?: ReactNode | ((item: unknown, index: number) => ReactNode);
   addLabel?: string;
   removeLabel?: string;
+  duplicateLabel?: string;
+  moveUpLabel?: string;
+  moveDownLabel?: string;
+  emptyLabel?: string;
+  minItems?: number;
+  maxItems?: number;
+  reorderable?: boolean;
 };
 
 function getFieldConfig(fieldConfig: unknown, legacyFieldConfig: unknown, name: string) {
@@ -42,7 +55,16 @@ function getEmptyValue(type: string) {
     case "number":
       return undefined;
 
+    case "date-object":
+      return undefined;
+
+    case "file":
+      return undefined;
+
     case "array":
+      return [];
+
+    case "tuple":
       return [];
 
     case "object":
@@ -65,11 +87,20 @@ function getDefaultValue(field: FieldMeta | undefined): unknown {
     case "number":
       return undefined;
 
+    case "date-object":
+      return undefined;
+
+    case "file":
+      return undefined;
+
     case "boolean":
       return false;
 
     case "array":
       return [];
+
+    case "tuple":
+      return (field.items ?? []).map((item) => getDefaultValue(item));
 
     case "object":
       return Object.fromEntries(
@@ -93,7 +124,7 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
   const path = parentPath ? joinPath(parentPath, field.name) : field.name;
   const fallbackConfig = legacyFieldConfig ?? (fieldConfig as FieldConfig<TValues> | undefined);
   const config = getFieldConfig(fieldConfig, fallbackConfig, field.name) as
-    | (FieldOptions<unknown, unknown> & { array?: ArrayConfig })
+    | (FieldOptions<unknown, unknown> & { inputType?: "checkbox-group"; array?: ArrayConfig })
     | undefined;
 
   const effectiveConfig =
@@ -119,7 +150,76 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
     return null;
   }
 
+  const fieldComponentOverride = (
+    config as {
+      component?: ComponentType<{ field: unknown; config?: unknown; state?: unknown; values?: unknown }>;
+    } | undefined
+  )?.component;
+  const containerComponent =
+    fieldComponentOverride ??
+    (fieldComponent?.[field.type as "array" | "object"] as typeof fieldComponentOverride);
+  const ContainerComponent = containerComponent;
+
+  if (ContainerComponent && (field.type === "array" || field.type === "object")) {
+    return (
+      <div
+        className="erlform-field"
+        style={{ "--erlform-col-span": layout?.colSpan ?? 12 } as CSSProperties}
+      >
+        <form.Field name={path}>
+          {(fieldApi: unknown) => (
+            <ContainerComponent
+              field={fieldApi}
+              config={config}
+              state={state}
+              values={values}
+            />
+          )}
+        </form.Field>
+      </div>
+    );
+  }
+
+  if (field.type === "array" && config?.inputType === "checkbox-group" && config.options) {
+    const options = resolveValue(config.options, values) ?? [];
+
+    return (
+      <div className="erlform-field">
+        <CheckboxGroup<TValues> form={form} name={path} values={values} options={options} />
+      </div>
+    );
+  }
+
+  if (field.type === "union" && field.discriminator) {
+    return (
+      <div className="erlform-field">
+        <DiscriminatedUnionField<TValues>
+          form={form}
+          field={field}
+          parentPath={path}
+          fieldConfig={config}
+          legacyFieldConfig={fallbackConfig}
+          fieldComponent={fieldComponent}
+        />
+      </div>
+    );
+  }
+
   const content = (() => {
+    if (field.type === "tuple") {
+      return (
+        <TupleField<TValues>
+          form={form}
+          field={field}
+          parentPath={path}
+          values={values}
+          fieldConfig={config}
+          legacyFieldConfig={fallbackConfig}
+          fieldComponent={fieldComponent}
+        />
+      );
+    }
+
     if (field.type === "array") {
       const arrayConfig = config?.array;
 
@@ -135,12 +235,34 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
           name={path}
           addLabel={arrayConfig?.addLabel}
           removeLabel={arrayConfig?.removeLabel}
+          duplicateLabel={arrayConfig?.duplicateLabel}
+          moveUpLabel={arrayConfig?.moveUpLabel}
+          moveDownLabel={arrayConfig?.moveDownLabel}
+          emptyLabel={arrayConfig?.emptyLabel}
+          minItems={arrayConfig?.minItems}
+          maxItems={arrayConfig?.maxItems}
+          reorderable={arrayConfig?.reorderable}
           itemLabel={
             arrayConfig?.itemLabel as string | ((item: unknown, index: number) => string) | undefined
           }
           createItem={() => getDefaultValue(itemField)}
         >
           {(_item, index) => {
+            const itemPath = joinPath(path, index);
+
+            if (itemField.type !== "object") {
+              return (
+                <Field<TValues>
+                  form={form}
+                  name={itemPath}
+                  type={itemField.type}
+                  config={config as InputFieldOptions<TValues, unknown> | undefined}
+                  fieldComponent={fieldComponent}
+                  state={resolveFieldState(config, values)}
+                />
+              );
+            }
+
             return (
               <div className="erlform-array-item-content">
                 <ObjectField<TValues>
@@ -155,6 +277,19 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
             );
           }}
         </FieldArray>
+      );
+    }
+
+    if (field.type === "record") {
+      return (
+        <RecordField<TValues>
+          form={form}
+          field={field}
+          parentPath={path}
+          fieldConfig={config}
+          legacyFieldConfig={fallbackConfig}
+          fieldComponent={fieldComponent}
+        />
       );
     }
 

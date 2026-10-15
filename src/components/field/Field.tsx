@@ -40,18 +40,26 @@ export function Field<TValues = Record<string, unknown>, TValue = unknown>({
                 state={state}
               />
 
-              <FieldLabel config={resolvedConfig} state={state} htmlFor={name} />
+              <FieldLabel config={resolvedConfig} state={state} htmlFor={name} name={name} />
 
-              <FieldError config={resolvedConfig} errors={field.state.meta.errors} />
+              <FieldError
+                id={`${name}-error`}
+                config={resolvedConfig}
+                errors={field.state.meta.errors}
+              />
             </div>
           );
         }
 
         return (
           <div className={config?.wrapperClassName}>
-            <FieldLabel config={resolvedConfig} state={state} htmlFor={name} />
+            <FieldLabel config={resolvedConfig} state={state} htmlFor={name} name={name} />
 
-            <FieldDescription config={resolvedConfig} description={resolvedConfig?.description} />
+            <FieldDescription
+              id={`${name}-description`}
+              config={resolvedConfig}
+              description={resolvedConfig?.description}
+            />
 
             <FieldControl
               config={resolvedConfig}
@@ -61,7 +69,11 @@ export function Field<TValues = Record<string, unknown>, TValue = unknown>({
               state={state}
             />
 
-            <FieldError config={resolvedConfig} errors={field.state.meta.errors} />
+            <FieldError
+              id={`${name}-error`}
+              config={resolvedConfig}
+              errors={field.state.meta.errors}
+            />
           </div>
         );
       }}
