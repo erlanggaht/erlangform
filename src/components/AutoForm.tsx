@@ -1,14 +1,14 @@
 import { infer } from "@/infer";
 import "@/styles/index.css";
-import type { ReactFormExtendedApi } from "@tanstack/react-form";
 import type { ComponentRegistry } from "@/types/component-registry";
 import type { FieldConfig } from "@/types/field-options";
 import type { SectionConfigs } from "@/types/section-config";
 import { groupFieldsBySection } from "@/utils/group-fields-by-section";
+import type { ReactFormExtendedApi } from "@tanstack/react-form";
+import { useEffect, useState, type ReactNode } from "react";
 import { z } from "zod";
 import { FieldRenderer } from "./FieldRenderer";
 import { FieldSection } from "./field-section";
-import { useEffect, useState, type ReactNode } from "react";
 
 export type FormStep<TValues = Record<string, unknown>> = {
   id: string;
@@ -30,20 +30,7 @@ export type FormWizardOptions<TValues = Record<string, unknown>> = {
 export type ServerErrors = Record<string, string | readonly string[]>;
 
 export type AutoFormProps<TValues = Record<string, unknown>> = {
-  form: ReactFormExtendedApi<
-    TValues,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any
-  >;
+  form: ReactFormExtendedApi<TValues, any, any, any, any, any, any, any, any, any, any, any>;
   schema: z.ZodObject;
   fieldConfig?: FieldConfig<TValues>;
   fieldComponent?: ComponentRegistry<TValues>;
@@ -76,7 +63,7 @@ function FormContent<TValues>({
     onValuesChange?.(values);
   }, [onValuesChange, values]);
 
-  const groups = groupFieldsBySection(fields, fieldConfig);
+  const groups = groupFieldsBySection<TValues>(fields, fieldConfig);
 
   return (
     <div className="erlform-form">
@@ -138,7 +125,9 @@ export function AutoForm<TValues = Record<string, unknown>>({
   const [activeStep, setActiveStep] = useState(0);
   const activeWizardStep = wizard?.steps[activeStep];
   const visibleFields = activeWizardStep
-    ? fields.filter((field) => activeWizardStep.fields.includes(field.name as keyof TValues & string))
+    ? fields.filter((field) =>
+        activeWizardStep.fields.includes(field.name as keyof TValues & string),
+      )
     : fields;
 
   async function changeStep(nextStep: number) {
@@ -200,7 +189,9 @@ export function AutoForm<TValues = Record<string, unknown>>({
           </button>
           {activeStep < wizard.steps.length - 1 && (
             <button type="button" onClick={() => void changeStep(activeStep + 1)}>
-              {activeStep === 0 ? wizard.firstStepLabel ?? wizard.nextLabel ?? "Next" : wizard.nextLabel ?? "Next"}
+              {activeStep === 0
+                ? (wizard.firstStepLabel ?? wizard.nextLabel ?? "Next")
+                : (wizard.nextLabel ?? "Next")}
             </button>
           )}
         </div>

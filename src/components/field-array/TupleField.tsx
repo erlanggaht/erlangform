@@ -1,11 +1,8 @@
-import type { ComponentRegistry } from "@/types/component-registry";
-import type { FieldConfig, InputFieldOptions } from "@/types/field-options";
 import type { FieldMeta } from "@/infer";
+import type { ComponentRegistry } from "@/types/component-registry";
+import type { FieldConfig } from "@/types/field-options";
 import { joinPath } from "@/utils/field-path";
 import { FieldRenderer } from "../FieldRenderer";
-import { ObjectField } from "../field-object/FieldObject";
-import { Field } from "../field/Field";
-import { resolveFieldState } from "@/utils/resolve-field-state";
 
 type TupleFieldProps<TValues = Record<string, unknown>> = {
   form: any;
@@ -32,43 +29,15 @@ export function TupleField<TValues = Record<string, unknown>>({
         const itemPath = joinPath(parentPath, index);
         const itemField = { ...item, name: String(index) };
 
-        if (item.type === "object") {
-          return (
-            <ObjectField<TValues>
-              key={itemPath}
-              form={form}
-              field={itemField}
-              parentPath={itemPath}
-              fieldConfig={fieldConfig}
-              legacyFieldConfig={legacyFieldConfig}
-              fieldComponent={fieldComponent}
-            />
-          );
-        }
-
-        if (item.type === "array" || item.type === "tuple" || item.type === "record") {
-          return (
-            <FieldRenderer<TValues>
-              key={itemPath}
-              form={form}
-              field={itemField}
-              values={values}
-              fieldConfig={fieldConfig}
-              legacyFieldConfig={legacyFieldConfig}
-              parentPath={parentPath}
-              fieldComponent={fieldComponent}
-            />
-          );
-        }
-
         return (
-          <Field<TValues>
+          <FieldRenderer<TValues>
             key={itemPath}
             form={form}
-            name={itemPath}
-            type={item.type}
-            config={fieldConfig as InputFieldOptions<TValues, unknown> | undefined}
-            state={resolveFieldState(undefined, values)}
+            field={itemField}
+            values={values}
+            parentPath={parentPath}
+            fieldConfig={fieldConfig}
+            legacyFieldConfig={legacyFieldConfig}
             fieldComponent={fieldComponent}
           />
         );

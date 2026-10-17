@@ -9,6 +9,7 @@
   --erlform-surface-muted: #f8fafc;
   --erlform-danger: #dc2626;
   --erlform-radius: 10px;
+  --erlform-control-height: 44px;
 }
 
 .erlform-form {
@@ -151,30 +152,30 @@
 
 .erlform-field {
   min-width: 0;
-  grid-column: span var(--erlform-col-span);
+  grid-column: span var(--erlform-col-span, 12);
 }
 
 @media (min-width: 640px) {
   .erlform-field {
-    grid-column: span var(--erlform-sm);
+    grid-column: span var(--erlform-sm, var(--erlform-col-span, 12));
   }
 }
 
 @media (min-width: 768px) {
   .erlform-field {
-    grid-column: span var(--erlform-md);
+    grid-column: span var(--erlform-md, var(--erlform-sm, 12));
   }
 }
 
 @media (min-width: 1024px) {
   .erlform-field {
-    grid-column: span var(--erlform-lg);
+    grid-column: span var(--erlform-lg, var(--erlform-md, 12));
   }
 }
 
 @media (min-width: 1280px) {
   .erlform-field {
-    grid-column: span var(--erlform-xl);
+    grid-column: span var(--erlform-xl, var(--erlform-lg, 12));
   }
 }
 
@@ -254,6 +255,17 @@
   width: 100%;
 }
 
+.erlform-tuple > * {
+  min-width: 0;
+  grid-column: span 12;
+}
+
+@media (min-width: 640px) {
+  .erlform-tuple > * {
+    grid-column: span 6;
+  }
+}
+
 .erlform-union {
   width: 100%;
 }
@@ -286,7 +298,8 @@
 :where(.erlform-field) .erlform-native-control {
   width: 100%;
   box-sizing: border-box;
-  min-height: 40px;
+  height: var(--erlform-control-height);
+  min-height: var(--erlform-control-height);
   padding: 8px 11px;
   border: 1px solid var(--erlform-border-strong);
   border-radius: 8px;
@@ -309,6 +322,7 @@
 }
 
 .erlform-field .erlform-native-control.erlform-native-textarea {
+  height: auto;
   min-height: 104px;
   resize: vertical;
 }
@@ -326,6 +340,8 @@
 .erlform-field .erlform-native-control[type="checkbox"] {
   width: 16px;
   height: 16px;
+  min-height: 16px;
+  flex-shrink: 0;
   padding: 0;
   margin: 0;
   accent-color: var(--erlform-primary);
@@ -336,7 +352,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
+  min-height: var(--erlform-control-height);
 }
 
 .erlform-checkbox-field label {
@@ -370,6 +386,7 @@
 }
 
 .erlform-checkbox-option input {
+  flex-shrink: 0;
   accent-color: #4f46e5;
 }
 

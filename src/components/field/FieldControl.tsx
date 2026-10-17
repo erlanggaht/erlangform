@@ -15,13 +15,22 @@ function nativeClassName(className?: string) {
   return `erlform-native-control${className ? ` ${className}` : ""}`;
 }
 
-function formatDateValue(value: unknown, type: "date" | "datetime-local") {
+function formatDateValue(value: unknown) {
   if (!(value instanceof Date)) {
     return typeof value === "string" ? value : "";
   }
 
-  const iso = value.toISOString();
-  return type === "date" ? iso.slice(0, 10) : iso.slice(0, 16);
+  if (Number.isNaN(value.getTime())) return "";
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return `${String(value.getFullYear()).padStart(4, "0")}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+}
+
+function formatLocalDateTime(value: unknown) {
+  if (!value) return "";
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
 export function FieldControl<TValues = Record<string, unknown>, TValue = unknown>({
@@ -35,27 +44,24 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
   const hasDescription = Boolean(config?.description);
   const accessibilityProps = {
     "aria-invalid": hasErrors || undefined,
-    "aria-describedby": [
-      hasDescription ? `${field.name}-description` : undefined,
-      hasErrors ? `${field.name}-error` : undefined,
-    ]
-      .filter(Boolean)
-      .join(" ") || undefined,
+    "aria-describedby":
+      [
+        hasDescription ? `${field.name}-description` : undefined,
+        hasErrors ? `${field.name}-error` : undefined,
+      ]
+        .filter(Boolean)
+        .join(" ") || undefined,
     "aria-required": state.required || undefined,
   };
   const registryKey = config?.options ? "select" : type;
-  const registryComponent = fieldComponent?.[
-    registryKey as keyof ComponentRegistry<TValues>
-  ] as ComponentType<{
-    field: FieldComponentApi<TValue>;
-    config?: ResolvedInputFieldOptions<TValues, TValue>;
-    state?: FieldState;
-  }> | undefined;
-  const stringFallback = fieldComponent?.string as unknown as typeof registryComponent;
-  const Custom =
-    config?.component ??
-    registryComponent ??
-    (config?.options ? stringFallback : undefined);
+  const registryComponent = fieldComponent?.[registryKey as keyof ComponentRegistry<TValues>] as
+    | ComponentType<{
+        field: FieldComponentApi<TValue>;
+        config?: ResolvedInputFieldOptions<TValues, TValue>;
+        state?: FieldState;
+      }>
+    | undefined;
+  const Custom = config?.component ?? registryComponent;
 
   useEffect(() => {
     if (!config?.options) {
@@ -75,9 +81,7 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
   }, [config?.options, field.state.value]);
 
   if (Custom) {
-    return (
-      <Custom field={field as FieldComponentApi<TValue>} config={config} state={state} />
-    );
+    return <Custom field={field as FieldComponentApi<TValue>} config={config} state={state} />;
   }
 
   switch (type) {
@@ -114,13 +118,16 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
             disabled={state.disabled}
             aria-readonly={state.readOnly || undefined}
             className={nativeClassName(
-              config?.className ? `${config.className} erlform-native-select` : "erlform-native-select",
+              config?.className
+                ? `${config.className} erlform-native-select`
+                : "erlform-native-select",
             )}
             {...accessibilityProps}
-            onChange={
-              state.readOnly ? undefined : (e) => field.handleChange(e.target.value)
-            }
+            onChange={state.readOnly ? undefined : (e) => field.handleChange(e.target.value)}
           >
+            <option value="" disabled>
+              {config.placeholder ?? "Pilih opsi"}
+            </option>
             {config.options.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -140,7 +147,9 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
             disabled={state.disabled}
             readOnly={state.readOnly}
             className={nativeClassName(
-              config?.className ? `${config.className} erlform-native-textarea` : "erlform-native-textarea",
+              config?.className
+                ? `${config.className} erlform-native-textarea`
+                : "erlform-native-textarea",
             )}
             {...accessibilityProps}
             onChange={(e) => field.handleChange(e.target.value)}
@@ -210,14 +219,21 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
         <input
           id={field.name}
           type={inputType}
-          value={field.state.value ?? ""}
+          value={
+            type === "datetime" ? formatLocalDateTime(field.state.value) : (field.state.value ?? "")
+          }
           placeholder={config?.placeholder}
           required={state.required}
           disabled={state.disabled}
           readOnly={state.readOnly}
           className={nativeClassName(config?.className)}
           {...accessibilityProps}
-          onChange={(event) => field.handleChange(event.target.value)}
+          onChange={(event) => {
+            const value = event.target.value;
+            field.handleChange(
+              type === "datetime" ? (value ? new Date(value).toISOString() : undefined) : value,
+            );
+          }}
         />
       );
     }
@@ -227,14 +243,16 @@ export function FieldControl<TValues = Record<string, unknown>, TValue = unknown
         <input
           id={field.name}
           type="date"
-          value={formatDateValue(field.state.value, "date")}
+          value={formatDateValue(field.state.value)}
           required={state.required}
           disabled={state.disabled}
           readOnly={state.readOnly}
           className={nativeClassName(config?.className)}
           {...accessibilityProps}
           onChange={(event) =>
-            field.handleChange(event.target.value ? new Date(`${event.target.value}T00:00:00`) : undefined)
+            field.handleChange(
+              event.target.value ? new Date(`${event.target.value}T00:00:00`) : undefined,
+            )
           }
         />
       );

@@ -1,6 +1,6 @@
+import type { FieldMeta } from "@/infer";
 import type { ComponentRegistry } from "@/types/component-registry";
 import type { FieldConfig } from "@/types/field-options";
-import type { FieldMeta } from "@/infer";
 import { getValueByPath } from "@/utils/field-path";
 import { ObjectField } from "./FieldObject";
 
@@ -37,7 +37,12 @@ export function DiscriminatedUnionField<TValues = Record<string, unknown>>({
     <div className="erlform-union">
       <ObjectField<TValues>
         form={form}
-        field={variant}
+        field={{
+          ...variant,
+          fields: variant.fields?.map((child) =>
+            child.name === field.discriminator ? { ...child, options: field.variantKeys } : child,
+          ),
+        }}
         parentPath={parentPath}
         fieldConfig={fieldConfig}
         legacyFieldConfig={legacyFieldConfig}

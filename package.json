@@ -1,6 +1,6 @@
 {
   "name": "erlangform",
-  "version": "0.5.5",
+  "version": "1.0.0",
   "packageManager": "pnpm@10.19.0",
   "engines": {
     "node": "22.x"
@@ -28,7 +28,7 @@
     "build:app": "tsc -b && vite build",
     "typecheck": "tsc -p tsconfig.types.json --noEmit",
     "lint": "eslint .",
-    "test:runtime": "node --test tests/runtime/infer.test.mjs tests/runtime/accessibility.test.mjs",
+    "test:runtime": "node --test tests/runtime/release.test.mjs",
     "test": "pnpm typecheck && pnpm build && pnpm test:runtime",
     "check": "pnpm typecheck && pnpm lint && pnpm build && pnpm test:runtime",
     "prepublishOnly": "pnpm check",

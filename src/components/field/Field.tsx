@@ -14,6 +14,7 @@ type FieldProps<TValues = Record<string, unknown>, TValue = unknown> = {
   config?: InputFieldOptions<TValues, TValue>;
   state: FieldState;
   fieldComponent?: ComponentRegistry<TValues>;
+  values?: TValues;
 };
 
 export function Field<TValues = Record<string, unknown>, TValue = unknown>({
@@ -23,8 +24,9 @@ export function Field<TValues = Record<string, unknown>, TValue = unknown>({
   config,
   state,
   fieldComponent,
+  values,
 }: FieldProps<TValues, TValue>) {
-  const resolvedConfig = resolveFieldConfig(config, form.state.values as TValues);
+  const resolvedConfig = resolveFieldConfig(config, values ?? (form.state.values as TValues));
 
   return (
     <form.Field name={name}>

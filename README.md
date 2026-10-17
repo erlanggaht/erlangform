@@ -39,6 +39,63 @@ menambahkan import CSS terpisah.
 
 ## Dokumentasi
 
+### Array bertingkat dan tuple
+
+Gunakan `item` untuk mengatur setiap item array, termasuk array di dalam array.
+Untuk tuple, gunakan indeks posisi (`0`, `1`, dan seterusnya).
+
+```tsx
+const schema = z.object({
+  matrix: z.array(z.array(z.string())),
+  points: z.array(z.tuple([z.string(), z.number()])),
+});
+
+const fieldConfig = {
+  matrix: {
+    array: { addLabel: "Tambah baris" },
+    item: {
+      array: { addLabel: "Tambah sel" },
+      item: { placeholder: "Isi sel" },
+    },
+  },
+  points: {
+    item: { 0: { label: "Nama titik" }, 1: { label: "Nilai" } },
+  },
+} satisfies FieldConfig<z.infer<typeof schema>>;
+```
+
+Konfigurasi langsung pada child object array tetap didukung. Jika `item` diisi,
+konfigurasi item tersebut digunakan sebagai penggantinya. Callback pada child
+object menerima object induknya; callback pada posisi tuple atau item array
+menerima tuple atau array induknya.
+
+### Konfigurasi discriminated union
+
+Semua field dari setiap cabang union dapat dikonfigurasi. Tipe nilai tetap
+diperiksa, dan callback bisa melakukan narrowing melalui discriminator.
+Pilihan discriminator diinferensikan dari seluruh cabang schema.
+
+```tsx
+const schema = z.object({
+  contact: z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("person"), name: z.string() }),
+    z.object({ kind: z.literal("company"), company: z.string() }),
+  ]),
+});
+
+const fieldConfig = {
+  contact: {
+    kind: { label: "Jenis kontak" },
+    name: { label: "Nama personal" },
+    company: { label: "Nama perusahaan" },
+  },
+} satisfies FieldConfig<z.infer<typeof schema>>;
+```
+
+`z.date()` menggunakan `Date` pada tengah malam zona waktu lokal. Tanggal yang
+ditampilkan di kalender tetap sama setelah dipilih. Field ISO datetime menyimpan
+nilai ISO UTC dan menampilkan waktu lokal pada input.
+
 Panduan lengkap, contoh penggunaan, konfigurasi field, API, dan changelog tersedia di:
 
 [erlangform.erlanggaht.com/docs](https://erlangform.erlanggaht.com/docs)

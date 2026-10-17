@@ -1,5 +1,5 @@
-import type { ComponentRegistry } from "@/types/component-registry";
 import type { FieldMeta } from "@/infer";
+import type { ComponentRegistry } from "@/types/component-registry";
 import type { FieldConfig, FieldOptions, InputFieldOptions } from "@/types/field-options";
 import { getValueByPath, joinPath } from "@/utils/field-path";
 import { resolveValue } from "@/utils/resolve-field";
@@ -8,9 +8,9 @@ import { useEffect, type ComponentType, type CSSProperties, type ReactNode } fro
 import { FieldArray } from "./field-array";
 import { CheckboxGroup } from "./field-array/CheckboxGroup";
 import { TupleField } from "./field-array/TupleField";
+import { DiscriminatedUnionField } from "./field-object/DiscriminatedUnionField";
 import { ObjectField } from "./field-object/FieldObject";
 import { RecordField } from "./field-object/RecordField";
-import { DiscriminatedUnionField } from "./field-object/DiscriminatedUnionField";
 import { Field } from "./field/Field";
 
 type FieldRendererProps<TValues = Record<string, unknown>> = {
@@ -56,6 +56,7 @@ function getEmptyValue(type: string) {
       return undefined;
 
     case "date-object":
+    case "datetime":
       return undefined;
 
     case "file":
@@ -82,12 +83,13 @@ function getDefaultValue(field: FieldMeta | undefined): unknown {
 
   switch (field.type) {
     case "string":
-      return "";
+      return field.options?.[0] ?? "";
 
     case "number":
       return undefined;
 
     case "date-object":
+    case "datetime":
       return undefined;
 
     case "file":
@@ -98,6 +100,12 @@ function getDefaultValue(field: FieldMeta | undefined): unknown {
 
     case "array":
       return [];
+
+    case "record":
+      return {};
+
+    case "union":
+      return getDefaultValue(field.variants?.[0]);
 
     case "tuple":
       return (field.items ?? []).map((item) => getDefaultValue(item));
@@ -121,10 +129,20 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
   parentPath,
   fieldComponent,
 }: FieldRendererProps<TValues>) {
-  const path = parentPath ? joinPath(parentPath, field.name) : field.name;
+  const childName =
+    parentPath &&
+    Array.isArray(getValueByPath(form.state.values, parentPath)) &&
+    /^\d+$/.test(field.name)
+      ? Number(field.name)
+      : field.name;
+  const path = parentPath ? joinPath(parentPath, childName) : field.name;
   const fallbackConfig = legacyFieldConfig ?? (fieldConfig as FieldConfig<TValues> | undefined);
   const config = getFieldConfig(fieldConfig, fallbackConfig, field.name) as
-    | (FieldOptions<unknown, unknown> & { inputType?: "checkbox-group"; array?: ArrayConfig })
+    | (FieldOptions<unknown, unknown> & {
+        inputType?: "checkbox-group";
+        array?: ArrayConfig;
+        item?: unknown;
+      })
     | undefined;
 
   const effectiveConfig =
@@ -139,6 +157,13 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
 
   const state = resolveFieldState(effectiveConfig, conditionValues);
   const layout = effectiveConfig?.layout;
+  const layoutStyle = {
+    "--erlform-col-span": layout?.colSpan ?? 12,
+    "--erlform-sm": layout?.sm ?? layout?.colSpan ?? 12,
+    "--erlform-md": layout?.md ?? layout?.sm ?? layout?.colSpan ?? 12,
+    "--erlform-lg": layout?.lg ?? layout?.md ?? layout?.sm ?? layout?.colSpan ?? 12,
+    "--erlform-xl": layout?.xl ?? layout?.lg ?? layout?.md ?? layout?.sm ?? layout?.colSpan ?? 12,
+  } as CSSProperties;
 
   useEffect(() => {
     if (!state.visible && effectiveConfig?.clearOnHide) {
@@ -151,9 +176,16 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
   }
 
   const fieldComponentOverride = (
-    config as {
-      component?: ComponentType<{ field: unknown; config?: unknown; state?: unknown; values?: unknown }>;
-    } | undefined
+    config as
+      | {
+          component?: ComponentType<{
+            field: unknown;
+            config?: unknown;
+            state?: unknown;
+            values?: unknown;
+          }>;
+        }
+      | undefined
   )?.component;
   const containerComponent =
     fieldComponentOverride ??
@@ -162,18 +194,10 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
 
   if (ContainerComponent && (field.type === "array" || field.type === "object")) {
     return (
-      <div
-        className="erlform-field"
-        style={{ "--erlform-col-span": layout?.colSpan ?? 12 } as CSSProperties}
-      >
+      <div className="erlform-field" style={layoutStyle}>
         <form.Field name={path}>
           {(fieldApi: unknown) => (
-            <ContainerComponent
-              field={fieldApi}
-              config={config}
-              state={state}
-              values={values}
-            />
+            <ContainerComponent field={fieldApi} config={config} state={state} values={values} />
           )}
         </form.Field>
       </div>
@@ -181,10 +205,10 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
   }
 
   if (field.type === "array" && config?.inputType === "checkbox-group" && config.options) {
-    const options = resolveValue(config.options, values) ?? [];
+    const options = resolveValue(config.options, conditionValues) ?? [];
 
     return (
-      <div className="erlform-field">
+      <div className="erlform-field" style={layoutStyle}>
         <CheckboxGroup<TValues> form={form} name={path} values={values} options={options} />
       </div>
     );
@@ -192,7 +216,7 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
 
   if (field.type === "union" && field.discriminator) {
     return (
-      <div className="erlform-field">
+      <div className="erlform-field" style={layoutStyle}>
         <DiscriminatedUnionField<TValues>
           form={form}
           field={field}
@@ -243,12 +267,33 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
           maxItems={arrayConfig?.maxItems}
           reorderable={arrayConfig?.reorderable}
           itemLabel={
-            arrayConfig?.itemLabel as string | ((item: unknown, index: number) => string) | undefined
+            arrayConfig?.itemLabel as
+              string | ((item: unknown, index: number) => string) | undefined
           }
           createItem={() => getDefaultValue(itemField)}
         >
           {(_item, index) => {
             const itemPath = joinPath(path, index);
+            const itemConfig = config?.item ?? config;
+
+            if (
+              config?.item !== undefined ||
+              ["array", "tuple", "record", "union"].includes(itemField.type)
+            ) {
+              return (
+                <FieldRenderer<TValues>
+                  form={form}
+                  field={{ ...itemField, name: String(index) }}
+                  parentPath={path}
+                  values={values}
+                  fieldConfig={{
+                    [index]: config?.item ?? (itemField.type === "array" ? undefined : config),
+                  }}
+                  legacyFieldConfig={fallbackConfig}
+                  fieldComponent={fieldComponent}
+                />
+              );
+            }
 
             if (itemField.type !== "object") {
               return (
@@ -256,9 +301,20 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
                   form={form}
                   name={itemPath}
                   type={itemField.type}
-                  config={config as InputFieldOptions<TValues, unknown> | undefined}
+                  config={
+                    (itemField.options &&
+                    !(itemConfig as InputFieldOptions<TValues, unknown>)?.options
+                      ? {
+                          ...itemConfig,
+                          options: itemField.options.map((value) => ({ label: value, value })),
+                        }
+                      : itemConfig) as InputFieldOptions<TValues, unknown> | undefined
+                  }
                   fieldComponent={fieldComponent}
-                  state={resolveFieldState(config, values)}
+                  state={resolveFieldState(
+                    itemConfig as InputFieldOptions<TValues, unknown> | undefined,
+                    values,
+                  )}
                 />
               );
             }
@@ -269,7 +325,7 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
                   form={form}
                   field={itemField}
                   parentPath={joinPath(path, index)}
-                  fieldConfig={config}
+                  fieldConfig={itemConfig}
                   legacyFieldConfig={fallbackConfig}
                   fieldComponent={fieldComponent}
                 />
@@ -314,24 +370,13 @@ export function FieldRenderer<TValues = Record<string, unknown>>({
         config={effectiveConfig as InputFieldOptions<TValues, unknown> | undefined}
         fieldComponent={fieldComponent}
         state={state}
+        values={conditionValues as TValues}
       />
     );
   })();
 
   return (
-    <div
-      className="erlform-field"
-      style={
-        {
-          "--erlform-col-span": layout?.colSpan ?? 12,
-          "--erlform-sm": layout?.sm ?? layout?.colSpan ?? 12,
-          "--erlform-md": layout?.md ?? layout?.sm ?? layout?.colSpan ?? 12,
-          "--erlform-lg": layout?.lg ?? layout?.md ?? layout?.sm ?? layout?.colSpan ?? 12,
-          "--erlform-xl":
-            layout?.xl ?? layout?.lg ?? layout?.md ?? layout?.sm ?? layout?.colSpan ?? 12,
-        } as React.CSSProperties
-      }
-    >
+    <div className="erlform-field" style={layoutStyle}>
       {content}
     </div>
   );
